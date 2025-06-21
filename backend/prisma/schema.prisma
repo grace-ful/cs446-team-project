@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// DATABASE_URL="postgresql://Fit4Me_owner:npg_U24FKWMcwDqm@ep-divine-base-a8vq8yfj-pooler.eastus2.azure.neon.tech/Fit4Me?sslmode=require"
+
+// IMPORTANT NOTES:
+// - Whenever you make a change to the schema(s), run the following command: 'npx prisma migrate dev --name <MEANINGFUL_NAME_HERE>'
+// - Under the hood, prisma will also run 'npx prisma generate', but you can run it again optionally. You don't need to.
+// - Prisma will then generate a client, which can be used in the routers to communicate with the DB
+// - Instructions to access the prisma client are in the router files.
+// - Finally, to see all the models visually, use 'npx prisma studio'
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// sample schemas - feel free to edit
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  exercises Exercise[]
+  createdAt DateTime @default(now())
+}
+
+model Exercise {
+  id        String   @id @default(uuid())
+  name      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
