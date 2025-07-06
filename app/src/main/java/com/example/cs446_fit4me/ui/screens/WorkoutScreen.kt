@@ -129,7 +129,7 @@ fun CombinedWorkoutSection(
     onStandardWorkoutDeselect: () -> Unit = {}
 ) {
     // My Exercises Section
-    val myLabel = if (myWorkouts.size == 1) "My Exercises (1)" else "My Exercises (${myWorkouts.size})"
+    val myLabel = if (myWorkouts.size <= 1) "My Workout (${myWorkouts.size})" else "My Workouts (${myWorkouts.size})"
     Text(myLabel, style = MaterialTheme.typography.titleMedium)
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -171,7 +171,7 @@ fun CombinedWorkoutSection(
     Spacer(modifier = Modifier.height(24.dp))
 
     // Standard Exercises Section
-    val standardLabel = if (standardWorkouts.size == 1) "Standard Exercises (1)" else "Standard Exercises (${standardWorkouts.size})"
+    val standardLabel = "Standard Workouts (${standardWorkouts.size})" //if (standardWorkouts.size <= 1) "Standard Workout (1)" else "Standard Workouts (${standardWorkouts.size})"
     Text(standardLabel, style = MaterialTheme.typography.titleMedium)
 
     Spacer(modifier = Modifier.height(8.dp))
