@@ -7,10 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,12 +18,26 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.Exercise
 import com.example.cs446_fit4me.model.BodyPart
 import com.example.cs446_fit4me.model.Equipment
+import com.example.cs446_fit4me.model.ExerciseTemplate
 import com.example.cs446_fit4me.model.MuscleGroup
+import com.example.cs446_fit4me.model.toExercise
+import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.network.ExerciseApiService
+import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
+import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,32 +51,60 @@ fun ExercisesScreen(navController: NavController? = null) {
     var equipmentDropdownExpanded by remember { mutableStateOf(false) }
     var selectedEquipments by remember { mutableStateOf(setOf<Equipment>()) }
 
+
+    var allExercises by remember { mutableStateOf<List<Exercise>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var userExercisesLoaded by remember { mutableStateOf(false) }
+
+
     var filterButtonSize by remember { mutableStateOf(IntSize.Zero) }
 
-    val mockExercises = listOf(
-        Exercise("Push Up", MuscleGroup.CHEST, Equipment.NONE, BodyPart.CHEST, "", true, "https://wger.de/media/exercise-images/91/Crunches-1.png"),
-        Exercise("Back Extension", MuscleGroup.BACK, Equipment.NONE, BodyPart.BACK, "", true, null),
-        Exercise("Battle Ropes", MuscleGroup.CORE, Equipment.NONE, BodyPart.CORE, "", true, null),
-        Exercise("Squat", MuscleGroup.LEGS, Equipment.NONE, BodyPart.LEGS, "", true, null),
-        Exercise("Arnold Press", MuscleGroup.SHOULDERS, Equipment.DUMBBELL, BodyPart.SHOULDERS, "", true, null),
-        Exercise("Bench Press (Barbell)", MuscleGroup.CHEST, Equipment.BARBELL, BodyPart.CHEST, "", true, null),
-        Exercise("Dumbbell Curl", MuscleGroup.ARMS, Equipment.DUMBBELL, BodyPart.ARMS, "", true, null),
-        Exercise("Leg Press", MuscleGroup.LEGS, Equipment.MACHINE, BodyPart.LEGS, "", true, null),
-        Exercise("Plank", MuscleGroup.CORE, Equipment.NONE, BodyPart.CORE, "", true, null),
-        Exercise("Tricep Dips", MuscleGroup.ARMS, Equipment.NONE, BodyPart.ARMS, "", true, null),
-        Exercise("Lat Pulldown", MuscleGroup.BACK, Equipment.MACHINE, BodyPart.BACK, "", true, null),
-        Exercise("Cable Row", MuscleGroup.BACK, Equipment.MACHINE, BodyPart.BACK, "", true, null),
-        Exercise("Overhead Tricep Extension", MuscleGroup.ARMS, Equipment.DUMBBELL, BodyPart.ARMS, "", true, null),
-        Exercise("Deadlift", MuscleGroup.BACK, Equipment.BARBELL, BodyPart.BACK, "", true, null),
-        Exercise("Leg Curl", MuscleGroup.LEGS, Equipment.MACHINE, BodyPart.LEGS, "", true, null)
-    ).sortedBy { it.name }
+    var myExercises by remember { mutableStateOf(listOf<Exercise>()) }
 
-    val myExercises = emptyList<Exercise>()
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = ApiClient.exerciseApiService.getGeneralExercises()
+            println(response)
+            allExercises = response.map { exerciseTemplate ->
+                exerciseTemplate.toExercise()
+
+            }
+            println(allExercises)
+            isLoading = false
+            userExercisesLoaded = false
+        } catch (_: Exception) {
+            errorMessage = "Failed to load exercises"
+            isLoading = false
+        }
+    }
+
+    // Fetch user exercises when "My Exercises" tab is selected
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex == 1 && !userExercisesLoaded) {
+            try {
+                val userId = "621b6f5d-aa5d-422b-bd15-87f23724396c"
+                val response = ApiClient.exerciseApiService.getUserExercises(userId)
+                println(response)
+                myExercises = response.map { it.toExercise() }
+                println(myExercises)
+                userExercisesLoaded = true
+            } catch (e: Exception) {
+                println("Failed to load user exercises: ${e.message}")
+            }
+        }
+    }
+
+
+    val mockExercises = allExercises.sortedBy { it.name }
 
     // Pick base list depending on selected tab
+
+    var showCreateModal by remember { mutableStateOf(false) }
+
     val baseExercises = if (selectedTabIndex == 0) mockExercises else myExercises
 
-    // Filter exercises by search, selected body parts, and selected equipment
     val filteredExercises = baseExercises.filter { exercise ->
         exercise.name.startsWith(searchText, ignoreCase = true) &&
                 (selectedBodyParts.isEmpty() || exercise.bodyPart in selectedBodyParts) &&
@@ -77,14 +116,30 @@ fun ExercisesScreen(navController: NavController? = null) {
             .fillMaxSize()
             .systemBarsPadding()
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             TopAppBar(
                 title = { Text("Exercises") },
                 navigationIcon = {
                     IconButton(onClick = { navController?.navigateUp() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    Surface(
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .clickable { showCreateModal = true },
+                        shape = RoundedCornerShape(50), // big rounding for pill shape
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shadowElevation = 4.dp,
+                        tonalElevation = 4.dp
+                    ) {
+                        Text(
+                            text = "New",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
@@ -164,11 +219,7 @@ fun ExercisesScreen(navController: NavController? = null) {
 
                 // Equipment Filter Button and Dropdown
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .onGloballyPositioned { coordinates: LayoutCoordinates ->
-                            // Optional: Track size separately if needed
-                        }
+                    modifier = Modifier.weight(1f)
                 ) {
                     FilterButton(
                         text = if (selectedEquipments.isEmpty()) "Equipment" else "${selectedEquipments.size} selected",
@@ -235,18 +286,177 @@ fun ExercisesScreen(navController: NavController? = null) {
             )
         }
 
-        FloatingActionButton(
-            onClick = {
-                // TODO: Implement add exercise logic later
-            },
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.BottomEnd)
-        ) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Add Exercise")
+        if (showCreateModal) {
+            CreateExerciseModal(
+                bodyParts = BodyPart.values().toList(),
+                equipmentList = Equipment.values().toList(),
+                onDismiss = { showCreateModal = false },
+                onExerciseCreated = { created ->
+                    myExercises = myExercises + created
+                    selectedTabIndex = 1
+                }
+            )
         }
     }
 }
+
+
+@Composable
+fun CreateExerciseModal(
+    bodyParts: List<BodyPart>,
+    equipmentList: List<Equipment>,
+    onDismiss: () -> Unit,
+    onExerciseCreated: (Exercise) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var selectedBodyPart by remember { mutableStateOf<BodyPart?>(null) }
+    var equipmentDropdownExpanded by remember { mutableStateOf(false) }
+    var selectedEquipment by remember { mutableStateOf<Equipment?>(null) }
+    var isSaving by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Create Custom Exercise",
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, contentDescription = "Close")
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Exercise Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Text("Body Part", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier.heightIn(max = 150.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(bodyParts) { bp ->
+                        val isSelected = bp == selectedBodyPart
+                        Surface(
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.clickable { selectedBodyPart = bp }
+                        ) {
+                            Text(
+                                bp.name.replaceFirstChar { it.uppercase() },
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Text("Equipment", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+
+                Box {
+                    OutlinedTextField(
+                        value = selectedEquipment?.name?.replaceFirstChar { it.uppercase() } ?: "",
+                        onValueChange = {},
+                        label = { Text("Equipment") },
+                        readOnly = true,
+                        trailingIcon = {
+                            Icon(
+                                imageVector = if (equipmentDropdownExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                contentDescription = "Toggle Dropdown",
+                                Modifier.clickable {
+                                    equipmentDropdownExpanded = !equipmentDropdownExpanded
+                                }
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = equipmentDropdownExpanded,
+                        onDismissRequest = { equipmentDropdownExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        equipmentList.forEach { eq ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    selectedEquipment = eq
+                                    equipmentDropdownExpanded = false
+                                },
+                                text = {
+                                    Text(eq.name.replaceFirstChar { it.uppercase() })
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            isSaving = true
+                            try {
+                                println(name)
+                                println(MuscleGroup.CHEST)
+                                println(selectedBodyPart)
+                                println(selectedEquipment)
+                                val req = CreateExerciseRequest(
+                                    name = name,
+                                    muscleGroup = MuscleGroup.OTHER,
+                                    bodyPart = selectedBodyPart!!,
+                                    equipment = selectedEquipment!!,
+                                    isGeneral = false,
+                                    userId =  "621b6f5d-aa5d-422b-bd15-87f23724396c"
+                                )
+                                val created = ApiClient.exerciseApiService.createExercise(req)
+                                println(created)
+                                onExerciseCreated(created.toExercise())
+                            } catch (e: Exception) {
+                                println("Error creating exercise: ${e.message}")
+                            } finally {
+                                isSaving = false
+                                onDismiss()
+                            }
+                        }
+                    },
+                    enabled = !isSaving && selectedBodyPart != null && selectedEquipment != null && name.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (isSaving) "Saving..." else "Save")
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun ExercisesList(exercises: List<Exercise>, modifier: Modifier = Modifier) {

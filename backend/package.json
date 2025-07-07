@@ -5,10 +5,10 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"dev": "tsc -b && node ./dist/app.js",
-		"data": "tsc -b && node ./dist/fetchAndSave.js",
+		"data": "tsc -b && node ./dist/scripts/fetchAndSave.js",
 		"seed": "tsc -b && node ./dist/scripts/seedExerciseData.js",
-		"y11": "tsc -b && node ./dist/fetchAndSave.js && node ./dist/scripts/seedExerciseData.js",
-		"y11-dev": "tsc -b && node ./dist/fetchAndSave.js && node ./dist/scripts/seedExerciseData.js && npx prisma studio"
+		"y11": "tsc -b && node ./dist/scripts/fetchAndSave.js && node ./dist/scripts/seedExerciseData.js",
+		"y11-dev": "tsc -b && node ./dist/scripts/fetchAndSave.js && node ./dist/scripts/seedExerciseData.js && npx prisma studio"
 	},
 	"keywords": [],
 	"author": "",
@@ -25,6 +25,7 @@
 		"zod": "^3.25.67"
 	},
 	"devDependencies": {
+		"@types/axios": "^0.9.36",
 		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.3",
 		"@types/node": "^24.0.3",
