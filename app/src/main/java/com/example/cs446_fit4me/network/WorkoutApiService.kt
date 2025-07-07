@@ -1,7 +1,6 @@
 package com.example.cs446_fit4me.network
 
-import com.example.cs446_fit4me.model.CreateWorkoutTemplateRequest
-import com.example.cs446_fit4me.model.WorkoutTemplateResponse
+import com.example.cs446_fit4me.model.*
 import retrofit2.http.*
 
 interface WorkoutApiService {

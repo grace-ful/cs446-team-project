@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
+import com.example.cs446_fit4me.network.ApiClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,7 +167,7 @@ fun CombinedWorkoutSection(
                     val isSelected = workout.name == selectedMyWorkoutName
                     WorkoutCard(
                         title = workout.name,
-                        exercises = workout.exercises.joinToString(", ") { it.exerciseName },
+                        exercises = workout.exercises.joinToString(", ") { it.name },
                         isSelected = isSelected,
                         onLongPress = {
                             if (isSelected) onMyWorkoutDeselect() else onMyWorkoutLongPress(workout.name)
@@ -208,7 +209,7 @@ fun CombinedWorkoutSection(
                     val isSelected = workout.name == selectedStandardWorkoutName
                     WorkoutCard(
                         title = workout.name,
-                        exercises = workout.exercises.joinToString(", ") { it.exerciseName },
+                        exercises = workout.exercises.joinToString(", ") { it.name },
                         isSelected = isSelected,
                         onLongPress = {
                             if (isSelected) onStandardWorkoutDeselect() else onStandardWorkoutLongPress(workout.name)
