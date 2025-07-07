@@ -18,8 +18,24 @@ function toValidEnum<T extends string>(
 }
 
 async function main() {
-  const filePath = path.resolve(__dirname, "../../src/scripts/output.json");
+  const filePath = path.resolve(__dirname, "../../dist/scripts/output.json");
   const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+
+  await prisma.pR.deleteMany({
+    where: {
+      template: {
+        isGeneral: true,
+      },
+    },
+  });
+
+  await prisma.exerciseSession.deleteMany({
+  where: {
+    exerciseTemplate: {
+      isGeneral: true,
+    },
+  },
+});
 
   // Step 1: Clear existing general templates
   await prisma.exerciseTemplate.deleteMany({
@@ -28,12 +44,17 @@ async function main() {
   console.log("🧹 Cleared existing general ExerciseTemplates");
 
   for (const item of data) {
-    const muscleGroup = toValidEnum(item.muscleGroup, validMuscleGroups, MuscleGroup.OTHER);
+    const muscleGroup = toValidEnum(
+      item.muscleGroup,
+      validMuscleGroups,
+      MuscleGroup.OTHER
+    );
     const bodyPart = toValidEnum(item.bodyPart, validBodyParts, BodyPart.OTHER);
 
     const equipmentRaw = item.equipment ?? "";
     const equipment =
-      equipmentRaw.toLowerCase().includes("bodyweight") || equipmentRaw.toLowerCase().includes("none")
+      equipmentRaw.toLowerCase().includes("bodyweight") ||
+      equipmentRaw.toLowerCase().includes("none")
         ? Equipment.NONE
         : toValidEnum(equipmentRaw, validEquipment, Equipment.OTHER);
 
@@ -51,7 +72,10 @@ async function main() {
         },
       });
     } catch (error: any) {
-      console.error(`❌ Failed to insert exercise ID ${item.id}:`, error.message);
+      console.error(
+        `❌ Failed to insert exercise ID ${item.id}:`,
+        error.message
+      );
     }
   }
 

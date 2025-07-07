@@ -3,7 +3,7 @@ import prisma from "../lib/prisma";
 
 const exerciseSessionRouter = Router();
 
-// ✅ Create ExerciseSession
+// Create ExerciseSession
 exerciseSessionRouter.post(
 	"/",
 	async (req: Request, res: Response): Promise<any> => {
@@ -37,24 +37,7 @@ exerciseSessionRouter.post(
 	}
 );
 
-// ✅ Get all ExerciseSessions
-exerciseSessionRouter.get("/", async (_req: Request, res: Response) => {
-	try {
-		const sessions = await prisma.exerciseSession.findMany({
-			include: {
-				exerciseTemplate: true,
-				user: true,
-				sets: true,
-			},
-		});
-
-		res.status(200).json(sessions);
-	} catch (err: any) {
-		res.status(500).json({ error: err.message });
-	}
-});
-
-// ✅ Get by ID
+// Get by ID
 exerciseSessionRouter.get(
 	"/:id",
 	async (req: Request, res: Response): Promise<any> => {
