@@ -6,9 +6,9 @@ import retrofit2.http.*
 
 interface WorkoutApiService {
 
-    // GET /workout-template/
-    @GET("workout-template/")
-    suspend fun getWorkoutTemplateRoot(): Map<String, String>
+    @GET("workout-template/general")
+    suspend fun getGeneralWorkouts(): List<WorkoutTemplateResponse>
+
 
     // POST /workout-template/add
     @POST("workout-template/add")

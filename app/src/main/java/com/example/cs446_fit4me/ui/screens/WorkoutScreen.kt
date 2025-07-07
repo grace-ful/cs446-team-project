@@ -30,7 +30,22 @@ fun WorkoutScreen(
     workoutViewModel: WorkoutViewModel = viewModel()
 ) {
     val myWorkouts by remember { derivedStateOf { workoutViewModel.myWorkouts } }
-    val standardWorkouts by remember { mutableStateOf(workoutViewModel.standardWorkouts.toMutableStateList()) }
+
+
+    var standardWorkouts by remember { mutableStateOf<List<WorkoutModel>>(emptyList()) }
+    var standardWorkoutsLoaded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = ApiClient.workoutApiService.getGeneralWorkouts()
+            println("Standard workouts1: $response")
+            standardWorkouts = response.map { it.toWorkoutModel() }
+            println("Standard workouts2: $standardWorkouts")
+            standardWorkoutsLoaded = true
+        } catch (e: Exception) {
+            println("Failed to load standard workouts: ${e.message}")
+        }
+    }
 
     var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }
     var selectedStandardWorkoutName by remember { mutableStateOf<String?>(null) }
