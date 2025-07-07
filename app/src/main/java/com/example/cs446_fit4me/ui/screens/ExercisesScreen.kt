@@ -62,6 +62,8 @@ fun ExercisesScreen(navController: NavController? = null) {
 
     var myExercises by remember { mutableStateOf(listOf<Exercise>()) }
 
+    var editingExercise by remember { mutableStateOf<Exercise?>(null) }
+
 
     LaunchedEffect(Unit) {
         try {
@@ -282,21 +284,34 @@ fun ExercisesScreen(navController: NavController? = null) {
 
             ExercisesList(
                 exercises = filteredExercises,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onEditClick = { editingExercise = it },
+                isEditable = selectedTabIndex == 1
             )
         }
 
-        if (showCreateModal) {
+        if (showCreateModal || editingExercise != null) {
             CreateExerciseModal(
                 bodyParts = BodyPart.values().toList(),
                 equipmentList = Equipment.values().toList(),
-                onDismiss = { showCreateModal = false },
+                initialExercise = editingExercise,
+                onDismiss = {
+                    showCreateModal = false
+                    editingExercise = null
+                },
                 onExerciseCreated = { created ->
                     myExercises = myExercises + created
+                    selectedTabIndex = 1
+                },
+                onExerciseUpdated = { updated ->
+                    myExercises = myExercises.map {
+                        if (it.name == updated.name) updated else it
+                    }
                     selectedTabIndex = 1
                 }
             )
         }
+
     }
 }
 
@@ -305,13 +320,18 @@ fun ExercisesScreen(navController: NavController? = null) {
 fun CreateExerciseModal(
     bodyParts: List<BodyPart>,
     equipmentList: List<Equipment>,
+    initialExercise: Exercise? = null,
     onDismiss: () -> Unit,
-    onExerciseCreated: (Exercise) -> Unit
+    onExerciseCreated: (Exercise) -> Unit,
+    onExerciseUpdated: (Exercise) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var selectedBodyPart by remember { mutableStateOf<BodyPart?>(null) }
+    var name by remember { mutableStateOf(initialExercise?.name ?: "") }
+    //var name by remember { mutableStateOf("") }
+    var selectedBodyPart by remember { mutableStateOf(initialExercise?.bodyPart) }
+    //var selectedBodyPart by remember { mutableStateOf<BodyPart?>(null) }
     var equipmentDropdownExpanded by remember { mutableStateOf(false) }
-    var selectedEquipment by remember { mutableStateOf<Equipment?>(null) }
+    var selectedEquipment by remember { mutableStateOf(initialExercise?.equipment) }
+    //var selectedEquipment by remember { mutableStateOf<Equipment?>(null) }
     var isSaving by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
@@ -438,7 +458,12 @@ fun CreateExerciseModal(
                                 )
                                 val created = ApiClient.exerciseApiService.createExercise(req)
                                 println(created)
-                                onExerciseCreated(created.toExercise())
+                                if (initialExercise != null) {
+                                    onExerciseUpdated(created.toExercise())
+                                } else {
+                                    onExerciseCreated(created.toExercise())
+                                }
+                                //onExerciseCreated(created.toExercise())
                             } catch (e: Exception) {
                                 println("Error creating exercise: ${e.message}")
                             } finally {
@@ -459,10 +484,16 @@ fun CreateExerciseModal(
 
 
 @Composable
-fun ExercisesList(exercises: List<Exercise>, modifier: Modifier = Modifier) {
+fun ExercisesList(exercises: List<Exercise>,
+                  modifier: Modifier = Modifier,
+                  onEditClick: (Exercise) -> Unit = {},
+                  isEditable: Boolean = false) {
     LazyColumn(modifier = modifier) {
         itemsIndexed(exercises) { index, exercise ->
-            ExerciseListItem(exercise = exercise)
+            ExerciseListItem(
+                exercise = exercise,
+                onEditClick = if (isEditable && !exercise.isGeneric) { { onEditClick(exercise) } } else null
+            )
             if (index < exercises.size - 1) {
                 Divider(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
