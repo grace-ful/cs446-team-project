@@ -17,4 +17,8 @@ object ApiClient {
       instance.create(ExerciseApiService::class.java)
     }
 
+		val workoutApiService: WorkoutApiService by lazy {
+        instance.create(WorkoutApiService::class.java)
+    }
+
 }

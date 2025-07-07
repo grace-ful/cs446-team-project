@@ -9,3 +9,21 @@ data class WorkoutModel(
     val exercises: List<WorkoutExerciseLinkModel>
 )
 
+fun WorkoutTemplateResponse.toWorkoutModel(): WorkoutModel {
+    return WorkoutModel(
+        id = this.id,
+        name = this.name,
+        isGeneric = this.isGeneral,
+        exercises = this.exercises.mapIndexed { index, ex ->
+            WorkoutExerciseLinkModel(
+                exerciseName = ex.name,
+                sets = null, // initially blank — can be filled by user later
+                reps = null,
+                durationSeconds = null,
+                weightKg = null,
+                restSeconds = null,
+                orderInWorkout = index
+            )
+        }
+    )
+}
