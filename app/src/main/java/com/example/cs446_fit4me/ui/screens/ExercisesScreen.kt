@@ -24,6 +24,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.Exercise
@@ -401,7 +402,11 @@ fun CreateExerciseModal(
                 Text("Equipment", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
 
-                Box {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { equipmentDropdownExpanded = !equipmentDropdownExpanded }
+                ) {
                     OutlinedTextField(
                         value = selectedEquipment?.name?.replaceFirstChar { it.uppercase() } ?: "",
                         onValueChange = {},
@@ -410,13 +415,16 @@ fun CreateExerciseModal(
                         trailingIcon = {
                             Icon(
                                 imageVector = if (equipmentDropdownExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                                contentDescription = "Toggle Dropdown",
-                                Modifier.clickable {
-                                    equipmentDropdownExpanded = !equipmentDropdownExpanded
-                                }
+                                contentDescription = "Toggle Dropdown"
                             )
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = false
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(color = Color.Transparent)
                     )
                     DropdownMenu(
                         expanded = equipmentDropdownExpanded,
