@@ -55,8 +55,12 @@ fun ExercisesScreen(navController: NavController? = null) {
     var allExercises by remember { mutableStateOf<List<Exercise>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var userExercisesLoaded by remember { mutableStateOf(false) }
+
 
     var filterButtonSize by remember { mutableStateOf(IntSize.Zero) }
+
+    var myExercises by remember { mutableStateOf(listOf<Exercise>()) }
 
 
     LaunchedEffect(Unit) {
@@ -69,9 +73,26 @@ fun ExercisesScreen(navController: NavController? = null) {
             }
             println(allExercises)
             isLoading = false
-        } catch (e: Exception) {
+            userExercisesLoaded = false
+        } catch (_: Exception) {
             errorMessage = "Failed to load exercises"
             isLoading = false
+        }
+    }
+
+    // Fetch user exercises when "My Exercises" tab is selected
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex == 1 && !userExercisesLoaded) {
+            try {
+                val userId = "621b6f5d-aa5d-422b-bd15-87f23724396c"
+                val response = ApiClient.exerciseApiService.getUserExercises(userId)
+                println(response)
+                myExercises = response.map { it.toExercise() }
+                println(myExercises)
+                userExercisesLoaded = true
+            } catch (e: Exception) {
+                println("Failed to load user exercises: ${e.message}")
+            }
         }
     }
 
@@ -81,7 +102,6 @@ fun ExercisesScreen(navController: NavController? = null) {
     // Pick base list depending on selected tab
 
     var showCreateModal by remember { mutableStateOf(false) }
-    var myExercises by remember { mutableStateOf(listOf<Exercise>()) }
 
     val baseExercises = if (selectedTabIndex == 0) mockExercises else myExercises
 
