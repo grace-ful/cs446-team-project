@@ -20,39 +20,29 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+
         setContent {
             CS446fit4meTheme {
-                var loggedIn by remember { mutableStateOf(false) }
+                var showMain by remember { mutableStateOf(false) }
                 var currentScreen by remember { mutableStateOf("login") }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        when {
-                            loggedIn -> {
-                                Text(
-                                    text = "Login successful! Welcome to Fit4Me 🎉",
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-
-                            currentScreen == "login" -> {
-                                LoginScreen(
-                                    onLoginSuccess = { loggedIn = true },
-                                    onNavigateToSignUp = { currentScreen = "signup" }
-                                )
-                            }
-
-                            currentScreen == "signup" -> {
-                                SignUpScreen(
-                                    onSignUpSuccess = { loggedIn = true },
-                                    onNavigateToLogin = { currentScreen = "login" }
-                                )
-                            }
-                        }
+                if (showMain) {
+                    MainScreen()
+                } else {
+                    when (currentScreen) {
+                        "login" -> LoginScreen(
+                            onLoginSuccess = { showMain = true },
+                            onNavigateToSignUp = { currentScreen = "signup" }
+                        )
+                        "signup" -> SignUpScreen(
+                            onSignUpSuccess = { showMain = true },
+                            onNavigateToLogin = { currentScreen = "login" }
+                        )
                     }
                 }
             }
         }
     }
 }
+
 

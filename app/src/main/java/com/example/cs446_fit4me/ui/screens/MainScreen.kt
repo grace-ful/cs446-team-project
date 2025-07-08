@@ -30,8 +30,9 @@ fun MainScreen() {
 
     // Get current route to determine title and back navigation state
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute = navBackStackEntry?.destination?.route ?: BottomNavItem.Home.route // ✅ fallback
     val currentScreenTitle = getTitleByRoute(currentRoute, bottomNavItems)
+
 
     // Determine if back navigation is possible
     val canNavigateBack = navController.previousBackStackEntry != null

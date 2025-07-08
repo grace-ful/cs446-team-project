@@ -68,16 +68,20 @@ fun SignUpScreen(
 
         isLoading = true
         error = null
-        auth.createUserWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                isLoading = false
-                if (task.isSuccessful) {
-                    // Save name, formattedHeight, parsedWeight, etc.
-                    onSignUpSuccess()
-                } else {
-                    error = task.exception?.localizedMessage ?: "Signup failed"
-                }
-            }
+
+        if (isFormValid) {
+            onSignUpSuccess()
+        }
+//        auth.createUserWithEmailAndPassword(email.trim(), password)
+//            .addOnCompleteListener { task ->
+//                isLoading = false
+//                if (task.isSuccessful) {
+//                    // Save name, formattedHeight, parsedWeight, etc.
+//                    onSignUpSuccess()
+//                } else {
+//                    error = task.exception?.localizedMessage ?: "Signup failed"
+//                }
+//            }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
