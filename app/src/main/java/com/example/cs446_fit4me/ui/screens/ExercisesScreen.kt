@@ -452,28 +452,34 @@ fun CreateExerciseModal(
                         scope.launch {
                             isSaving = true
                             try {
-                                println(name)
-                                println(MuscleGroup.CHEST)
-                                println(selectedBodyPart)
-                                println(selectedEquipment)
-                                val req = CreateExerciseRequest(
-                                    name = name,
-                                    muscleGroup = MuscleGroup.OTHER,
-                                    bodyPart = selectedBodyPart!!,
-                                    equipment = selectedEquipment!!,
-                                    isGeneral = false,
-                                    userId =  "621b6f5d-aa5d-422b-bd15-87f23724396c"
-                                )
-                                val created = ApiClient.exerciseApiService.createExercise(req)
-                                println(created)
                                 if (initialExercise != null) {
-                                    onExerciseUpdated(created.toExercise())
+                                    val updatedTemplate = ExerciseTemplate(
+                                        id = initialExercise.id,
+                                        name = name,
+                                        muscleGroup = MuscleGroup.OTHER.name,
+                                        bodyPart = selectedBodyPart!!.name,
+                                        equipment = selectedEquipment!!.name,
+                                        isGeneral = false,
+                                        imageURL = initialExercise.imageUrl,
+                                        createdAt = initialExercise.createdAt,
+                                        userId = initialExercise.userId
+                                    )
+                                    val updated = ApiClient.exerciseApiService.updateExercise(initialExercise.id, updatedTemplate)
+                                    onExerciseUpdated(updated.toExercise());
                                 } else {
+                                    val req = CreateExerciseRequest(
+                                        name = name,
+                                        muscleGroup = MuscleGroup.OTHER,
+                                        bodyPart = selectedBodyPart!!,
+                                        equipment = selectedEquipment!!,
+                                        isGeneral = false,
+                                        userId = "621b6f5d-aa5d-422b-bd15-87f23724396c"
+                                    )
+                                    val created = ApiClient.exerciseApiService.createExercise(req)
                                     onExerciseCreated(created.toExercise())
                                 }
-                                //onExerciseCreated(created.toExercise())
                             } catch (e: Exception) {
-                                println("Error creating exercise: ${e.message}")
+                                println("Error saving exercise: ${e.message}")
                             } finally {
                                 isSaving = false
                                 onDismiss()
@@ -483,8 +489,15 @@ fun CreateExerciseModal(
                     enabled = !isSaving && selectedBodyPart != null && selectedEquipment != null && name.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (isSaving) "Saving..." else "Save")
+                    Text(
+                        when {
+                            isSaving -> "Saving..."
+                            initialExercise != null -> "Update"
+                            else -> "Create"
+                        }
+                    )
                 }
+
             }
         }
     }

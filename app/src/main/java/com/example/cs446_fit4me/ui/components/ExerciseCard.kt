@@ -100,7 +100,8 @@ fun ExerciseListItemPreview() {
         bodyPart = BodyPart.CHEST,
         description = "Sample exercise",
         isGeneric = true,
-        imageUrl = null
+        imageUrl = null,
+        id = "1"
     )
     ExerciseListItem(exercise = sampleExercise)
 }
