@@ -110,7 +110,7 @@ fun WorkoutScreen(
                         selectedMyWorkoutName = null
                     }
                     selectedStandardWorkoutName?.let {
-                        standardWorkouts.removeIf { workout -> workout.name == it }
+                        standardWorkouts = standardWorkouts.filterNot { workout -> workout.name == it }
                         selectedStandardWorkoutName = null
                     }
                     showConfirmDialog = false
