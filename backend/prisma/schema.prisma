@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// DATABASE_URL="postgresql://Fit4Me_owner:npg_U24FKWMcwDqm@ep-divine-base-a8vq8yfj-pooler.eastus2.azure.neon.tech/Fit4Me?sslmode=require"
+
+// IMPORTANT NOTES:
+// - Whenever you make a change to the schema(s), run the following command: 'npx prisma migrate dev --name <MEANINGFUL_NAME_HERE>'
+// - Under the hood, prisma will also run 'npx prisma generate', but you can run it again optionally. You don't need to.
+// - Prisma will then generate a client, which can be used in the routers to communicate with the DB
+// - Instructions to access the prisma client are in the router files.
+// - Finally, to see all the models visually, use 'npx prisma studio'
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// sample schemas - feel free to edit
+
+enum TimePreference {
+  MORNING
+  AFTERNOON
+  EVENING
+  NIGHT
+  NONE // fallback/default option
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ATHLETE
+  COACH
+}
+
+enum GymFrequency {
+  NEVER
+  RARELY
+  OCCASIONALLY // 1–2 times/week
+  REGULARLY // 3–4 times/week
+  FREQUENTLY // 5–6 times/week
+  DAILY // 7 days/week
+}
+
+enum MuscleGroup {
+  SHOULDERS
+  BICEPS
+  HAMSTRINGS
+  CALVES
+  GLUTES
+  LATS
+  CHEST
+  QUADS
+  ABS
+  TRICEPS
+  OTHER
+}
+
+enum Equipment {
+  BARBELLS
+  BENCH
+  DUMBBELL
+  GYM_MAT
+  INCLINE_BENCH
+  KETTLEBELL
+  PULL_UP_BAR
+  SZ_BAR
+  SWISS_BALL
+  NONE
+  OTHER
+}
+
+enum BodyPart {
+  ABS
+  ARMS
+  BACK
+  CALVES
+  CARDIO
+  CHEST
+  LEGS
+  SHOULDERS
+  OTHER
+}
+
+model User {
+  id              String          @id @default(uuid())
+  email           String          @unique
+  name            String
+  passwordHash    String
+  heightCm        Float // Body measurements
+  weightKg        Float
+  age             Int
+  location        String // e.g., city name
+  timePreference  TimePreference  @default(NONE)
+  createdAt       DateTime        @default(now())
+  experienceLevel ExperienceLevel @default(BEGINNER)
+  gymFrequency    GymFrequency    @default(NEVER)
+
+  customWorkoutTemplates  WorkoutTemplate[]
+  customExerciseTemplates ExerciseTemplate[]
+  workoutSessions         WorkoutSession[]
+  exerciseSessions        ExerciseSession[]
+  PR                      PR[]
+}
+
+model WorkoutTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  isGeneral Boolean  @default(false) // true = general, false = custom
+  createdAt DateTime @default(now())
+
+  exercises      ExerciseTemplate[] @relation("WorkoutTemplateExercises")
+  User           User?              @relation(fields: [userId], references: [id])
+  userId         String?
+  WorkoutSession WorkoutSession[]
+}
+
+model WorkoutSession {
+  id String @id @default(uuid())
+
+  User   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  Workout           WorkoutTemplate @relation(fields: [workoutTemplateId], references: [id])
+  workoutTemplateId String
+
+  workoutDate DateTime @default(now())
+  notes       String?
+
+  exerciseSessions ExerciseSession[]
+
+  createdAt DateTime @default(now())
+}
+
+model PR {
+  id String @id @default(uuid())
+
+  template   ExerciseTemplate @relation(fields: [templateId], references: [id])
+  templateId String
+  User       User             @relation(fields: [userId], references: [id])
+  userId     String
+
+  weight    Float? // Optional: for weight-based PRs
+  duration  Int? // Optional: for time-based PRs (in seconds)
+  date      DateTime // When the PR was set
+  createdAt DateTime @default(now())
+}
+
+model ExerciseTemplate {
+  id          String      @id @default(uuid())
+  name        String
+  muscleGroup MuscleGroup
+  bodyPart    BodyPart
+  equipment   Equipment
+  isGeneral   Boolean     @default(false)
+  imageURL      String?
+
+  createdAt        DateTime          @default(now())
+  User             User?             @relation(fields: [userId], references: [id])
+  userId           String?
+  WorkoutTemplates WorkoutTemplate[] @relation("WorkoutTemplateExercises")
+  PR               PR[]
+  ExerciseSession  ExerciseSession[]
+}
+
+model ExerciseSession {
+  id                 String           @id @default(uuid())
+  exerciseTemplate   ExerciseTemplate @relation(fields: [exerciseTemplateID], references: [id])
+  exerciseTemplateID String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  date  DateTime
+  notes String?
+
+  sets ExerciseSet[]
+
+  createdAt        DateTime        @default(now())
+  WorkoutSession   WorkoutSession? @relation(fields: [workoutSessionId], references: [id])
+  workoutSessionId String?
+}
+
+model ExerciseSet {
+  id String @id @default(uuid())
+
+  reps     Int
+  weight   Float?
+  duration Int? // In seconds, optional
+
+  createdAt         DateTime        @default(now())
+  ExerciseSession   ExerciseSession @relation(fields: [exerciseSessionId], references: [id])
+  exerciseSessionId String
+}

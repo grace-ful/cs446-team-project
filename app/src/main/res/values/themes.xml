@@ -1,5 +1,50 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        Base application theme for LIGHT mode.
+        Your app's branding theme. This is the theme that will be applied
+        AFTER the splash screen, for your Compose content.
+    -->
+    <style name="Theme.Fit4MeApp" parent="android:Theme.Material.Light.NoActionBar">
+        <!--
+            You can add further customizations here if needed for the Activity window
+            itself, though most styling will be in your Compose Theme.kt.
+            Example:
+            <item name="android:statusBarColor">@color/your_light_status_bar_color</item>
+            <item name="android:navigationBarColor">@color/your_light_navigation_bar_color</item>
+        -->
+    </style>
 
+    <!-- Splash Screen Theme -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+
+        <!-- Safe for API 31–34 -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_tomato_with_weights</item>
+        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+
+        <item name="postSplashScreenTheme">@style/Theme.Fit4MeApp</item>
+    </style>
+
+
+    <!--
+        You might have other themes here, like your original Theme.CS446fit4me.
+        Ensure your AndroidManifest.xml is pointing to the correct themes.
+        If Theme.Fit4MeApp is your main Compose theme, this Theme.CS446fit4me might be
+        redundant unless used for specific non-Compose activities.
+    -->
     <style name="Theme.CS446fit4me" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+        The Theme.YourApp seems like a duplicate of what Theme.Fit4MeApp is now.
+        Consider consolidating to Theme.Fit4MeApp if it serves the same purpose.
+    -->
+    <style name="Theme.YourApp" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Customize your main app theme here if needed -->
+    </style>
+
+
+    <!-- <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
+
+    </style> -->
 </resources>

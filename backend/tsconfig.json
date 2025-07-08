@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": ".",                           // ✅ for cleaner imports
+    "resolveJsonModule": true,               // ✅ optional, helps with importing JSON
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "scripts", "prisma"],    // ✅ seed files included here
+  "exclude": ["node_modules", "dist"]
+}
