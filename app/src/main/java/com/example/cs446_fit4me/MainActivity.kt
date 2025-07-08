@@ -3,12 +3,14 @@ package com.example.cs446_fit4me
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
+import com.example.cs446_fit4me.LoginScreen
+import com.example.cs446_fit4me.SignUpScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,14 +18,37 @@ class MainActivity : ComponentActivity() {
         setContent {
             CS446fit4meTheme {
                 var loggedIn by remember { mutableStateOf(false) }
+                var currentScreen by remember { mutableStateOf("login") }
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (loggedIn) {
-                        Text("Login successful! Welcome to Fit4Me 🎉", modifier = Modifier.fillMaxSize())
-                    } else {
-                        LoginScreen(onLoginSuccess = { loggedIn = true })
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        when {
+                            loggedIn -> {
+                                Text(
+                                    text = "Login successful! Welcome to Fit4Me 🎉",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            currentScreen == "login" -> {
+                                LoginScreen(
+                                    onLoginSuccess = { loggedIn = true },
+                                    onNavigateToSignUp = { currentScreen = "signup" }
+                                )
+                            }
+
+                            currentScreen == "signup" -> {
+                                SignUpScreen(
+                                    onSignUpSuccess = { loggedIn = true },
+                                    onNavigateToLogin = { currentScreen = "login" }
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
+

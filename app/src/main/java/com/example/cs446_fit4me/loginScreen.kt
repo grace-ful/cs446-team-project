@@ -10,9 +10,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit = {}
-) {
+fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
@@ -27,80 +25,60 @@ fun LoginScreen(
         auth.signInWithEmailAndPassword(email.trim(), password)
             .addOnCompleteListener { task ->
                 isLoading = false
-                if (task.isSuccessful) {
-                    onLoginSuccess()
-                } else {
-                    error = task.exception?.localizedMessage ?: "Login failed"
-                }
+                if (task.isSuccessful) onLoginSuccess()
+                else error = task.exception?.localizedMessage ?: "Login failed"
             }
     }
 
-    fun signUp() {
-        isLoading = true
-        error = null
-        auth.createUserWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                isLoading = false
-                if (task.isSuccessful) {
-                    onLoginSuccess()
-                } else {
-                    error = task.exception?.localizedMessage ?: "Signup failed"
-                }
-            }
-    }
-
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(24.dp)
     ) {
-        Text(
-            if (isSignUpMode) "Sign Up" else "Login",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = {
-                if (isSignUpMode) signUp() else login()
-            },
-            enabled = !isLoading
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.9f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                if (isLoading) "Processing..." else if (isSignUpMode) "Sign Up" else "Login"
+            Text("Welcome Back!", style = MaterialTheme.typography.headlineLarge)
+            Text("Log in to continue", style = MaterialTheme.typography.bodyMedium)
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        TextButton(
-            onClick = {
-                isSignUpMode = !isSignUpMode
-                error = null
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = { login() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                enabled = !isLoading
+            ) {
+                Text(if (isLoading) "Logging in..." else "Login")
             }
-        ) {
-            Text(
-                if (isSignUpMode) "Already have an account? Log in"
-                else "Don't have an account? Sign up"
-            )
-        }
-        error?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(it, color = MaterialTheme.colorScheme.error)
+
+            TextButton(onClick = onNavigateToSignUp) {
+                Text("Don't have an account? Sign up")
+            }
+
+            error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
         }
     }
 }
