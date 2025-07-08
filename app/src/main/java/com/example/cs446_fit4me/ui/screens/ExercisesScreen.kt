@@ -34,7 +34,6 @@ import com.example.cs446_fit4me.model.ExerciseTemplate
 import com.example.cs446_fit4me.model.MuscleGroup
 import com.example.cs446_fit4me.model.toExercise
 import com.example.cs446_fit4me.network.ApiClient
-import com.example.cs446_fit4me.network.ExerciseApiService
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
 import kotlinx.coroutines.launch
@@ -98,6 +97,7 @@ fun ExercisesScreen(navController: NavController? = null) {
             }
         }
     }
+
 
 
     val mockExercises = allExercises.sortedBy { it.name }

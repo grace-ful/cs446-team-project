@@ -32,6 +32,19 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
+    fun fetchUserWorkouts(userId: String) {
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.workoutApiService.getUserWorkouts(userId)
+                _myWorkouts.clear()
+                _myWorkouts.addAll(response.map { it.toWorkoutModel() })
+            } catch (e: Exception) {
+                println("Error loading user workouts: ${e.message}")
+            }
+        }
+    }
+
+
     fun createEmptyWorkout(name: String = "Untitled"): String {
         val id = UUID.randomUUID().toString()
         _myWorkouts.add(

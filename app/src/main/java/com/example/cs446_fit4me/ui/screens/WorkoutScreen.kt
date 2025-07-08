@@ -48,6 +48,10 @@ fun WorkoutScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        workoutViewModel.fetchUserWorkouts("621b6f5d-aa5d-422b-bd15-87f23724396c")
+    }
+
     var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }
     var selectedStandardWorkoutName by remember { mutableStateOf<String?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }

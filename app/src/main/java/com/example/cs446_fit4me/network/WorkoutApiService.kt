@@ -15,6 +15,10 @@ interface WorkoutApiService {
         @Body request: CreateWorkoutTemplateRequest
     ): WorkoutTemplateResponse
 
+    @GET("workout-template/by-user/{userId}")
+    suspend fun getUserWorkouts(@Path("userId") userId: String): List<WorkoutTemplateResponse>
+
+
     // PUT /workout-template/{id}/add-exercises
     @PUT("workout-template/{id}/add-exercises")
     suspend fun addExercisesToTemplate(
