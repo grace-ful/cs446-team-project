@@ -1,9 +1,11 @@
 package com.example.cs446_fit4me.ui.viewmodel
 
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
-import com.example.cs446_fit4me.model.WorkoutExerciseLinkModel
-import com.example.cs446_fit4me.model.WorkoutModel
+import androidx.lifecycle.viewModelScope
+import com.example.cs446_fit4me.model.*
+import com.example.cs446_fit4me.network.ApiClient
+import kotlinx.coroutines.launch
 import java.util.*
 
 class WorkoutViewModel : ViewModel() {
@@ -11,38 +13,24 @@ class WorkoutViewModel : ViewModel() {
     private val _myWorkouts = mutableStateListOf<WorkoutModel>()
     val myWorkouts: List<WorkoutModel> get() = _myWorkouts
 
-    val standardWorkouts = listOf(
-        WorkoutModel(
-            id = UUID.randomUUID().toString(),
-            name = "Strong 5×5 - Workout B",
-            isGeneric = true,
-            exercises = listOf(
-                WorkoutExerciseLinkModel("Squat", orderInWorkout = 1),
-                WorkoutExerciseLinkModel("Overhead Press", orderInWorkout = 2),
-                WorkoutExerciseLinkModel("Deadlift", orderInWorkout = 3)
-            )
-        ),
-        WorkoutModel(
-            id = UUID.randomUUID().toString(),
-            name = "Legs",
-            isGeneric = true,
-            exercises = listOf(
-                WorkoutExerciseLinkModel("Squat", orderInWorkout = 1),
-                WorkoutExerciseLinkModel("Leg Extension", orderInWorkout = 2),
-                WorkoutExerciseLinkModel("Flat Leg Raise", orderInWorkout = 3)
-            )
-        ),
-        WorkoutModel(
-            id = UUID.randomUUID().toString(),
-            name = "Chest and Triceps",
-            isGeneric = true,
-            exercises = listOf(
-                WorkoutExerciseLinkModel("Bench Press", orderInWorkout = 1),
-                WorkoutExerciseLinkModel("Incline Press", orderInWorkout = 2),
-                WorkoutExerciseLinkModel("Military Press", orderInWorkout = 3)
-            )
-        )
-    )
+    private val _standardWorkouts = mutableStateListOf<WorkoutModel>()
+    val standardWorkouts: List<WorkoutModel> get() = _standardWorkouts
+
+    init {
+        fetchStandardWorkouts()
+    }
+
+    private fun fetchStandardWorkouts() {
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.workoutApiService.getGeneralWorkouts()
+                _standardWorkouts.clear()
+                _standardWorkouts.addAll(response.map { it.toWorkoutModel() })
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     fun createEmptyWorkout(name: String = "Untitled"): String {
         val id = UUID.randomUUID().toString()
@@ -59,7 +47,7 @@ class WorkoutViewModel : ViewModel() {
 
     fun addExercisesToWorkout(
         workoutId: String,
-        exercises: List<WorkoutExerciseLinkModel>
+        exercises: List<ExerciseTemplate>
     ) {
         val index = _myWorkouts.indexOfFirst { it.id == workoutId }
         if (index != -1) {
@@ -84,6 +72,7 @@ class WorkoutViewModel : ViewModel() {
         if (_myWorkouts.size >= 9) return // current bypass to bug when adding more than 10 workouts
         _myWorkouts.add(
             WorkoutModel(
+                id = UUID.randomUUID().toString(),
                 name = "New Custom Workout ${_myWorkouts.size + 1}",
                 isGeneric = false,
                 exercises = listOf()
