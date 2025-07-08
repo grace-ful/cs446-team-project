@@ -67,7 +67,7 @@ fun MainScreen() {
             composable(BottomNavItem.Messages.route) { MessagesScreen(navController) }
             composable(BottomNavItem.FindMatch.route) { FindMatchScreen(navController) }
             composable(BottomNavItem.Workout.route) { WorkoutScreen() }
-            composable(BottomNavItem.Profile.route) { ProfileScreen(navController) }
+            composable(BottomNavItem.Profile.route) { ProfileScreen() }
 
             composable("settings") {
                 SettingsMainScreen(navController)
