@@ -306,7 +306,7 @@ fun ExercisesScreen(navController: NavController? = null) {
                 },
                 onExerciseUpdated = { updated ->
                     myExercises = myExercises.map {
-                        if (it.name == updated.name) updated else it
+                        if (it.id == updated.id) updated else it
                     }
                     selectedTabIndex = 1
                 }
