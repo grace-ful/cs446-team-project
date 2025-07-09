@@ -18,6 +18,9 @@ import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.network.ApiClient
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+
 
 
 fun filterDigits(input: String): String = input.filter { it.isDigit() }
@@ -45,6 +48,8 @@ fun ProfileScreen() {
 
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+
+    val scope = rememberCoroutineScope()
 
     // Fetch user data on first composition
     LaunchedEffect(Unit) {
@@ -105,7 +110,7 @@ fun ProfileScreen() {
             location.isNotBlank() &&
             email.isNotBlank() &&
             password.isNotBlank() &&
-//            confirmPassword.isNotBlank() &&
+            confirmPassword.isNotBlank() &&
             isPasswordMatch
 
     val currentState = listOf(
@@ -246,7 +251,49 @@ fun ProfileScreen() {
 
         item {
             Button(
-                onClick = { /* TODO: Save changes */ },
+                onClick = {
+                    scope.launch {
+                        try {
+                            val userId = userPrefs.userIdFlow.firstOrNull()
+                            if (userId != null) {
+                                val updatedFields = mutableMapOf<String, Any>()
+
+                                if (name != originalState[0]) updatedFields["name"] = name.trim()
+                                if (age != originalState[1]) updatedFields["age"] = age.toIntOrNull() ?: 0
+
+                                val totalInches = (heightFeet.toIntOrNull() ?: 0) * 12 + (heightInches.toIntOrNull() ?: 0)
+                                val originalTotalInches = (originalState[2].toIntOrNull() ?: 0) * 12 + (originalState[3].toIntOrNull() ?: 0)
+                                if (totalInches != originalTotalInches) updatedFields["heightCm"] = totalInches
+
+                                val weightKg = (weightLbs.toFloatOrNull() ?: 0f) * 0.453592f
+                                val originalWeightKg = (originalState[4].toFloatOrNull() ?: 0f) * 0.453592f
+                                if (weightKg != originalWeightKg) updatedFields["weightKg"] = weightKg
+
+                                if (location != originalState[5]) updatedFields["location"] = location.trim()
+                                if (timePreference != originalState[7]) updatedFields["timePreference"] = timePreference
+                                if (experienceLevel != originalState[8]) updatedFields["experienceLevel"] = experienceLevel
+                                if (gymFrequency != originalState[9]) updatedFields["gymFrequency"] = gymFrequency
+
+                                if (password.isNotBlank() && password == confirmPassword) {
+                                    updatedFields["password"] = password
+                                }
+
+                                if (updatedFields.isNotEmpty()) {
+                                    ApiClient.userApiService.updateUser(
+                                        userId = userId,
+                                        updateData = updatedFields
+                                    )
+                                    println("✅ Profile update success")
+                                } else {
+                                    println("⚠️ No changes to update")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            println("❌ Profile update error: ${e.localizedMessage}")
+                        }
+                    }
+                },
+
                 enabled = isFormValid && isChanged,
                 modifier = Modifier
                     .fillMaxWidth()

@@ -18,4 +18,11 @@ interface UserApiService {
 
     @GET("user/{id}")
     suspend fun getUserById(@Path("id") userId: String): UserResponse
+
+    @PUT("user/{id}")
+    suspend fun updateUser(
+        @Path("id") userId: String,
+        @Body updateData: UpdateUserRequest
+    ): UserResponse
+
 }

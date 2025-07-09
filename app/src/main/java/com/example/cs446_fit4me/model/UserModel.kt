@@ -33,3 +33,16 @@ data class UserResponse(
 )
 
 data class ErrorResponse(val error: String)
+
+
+data class UpdateUserRequest(
+    val name: String? = null,
+    val age: Int? = null,
+    val heightCm: Int? = null,
+    val weightKg: Float? = null,
+    val location: String? = null,
+    val timePreference: String? = null,
+    val experienceLevel: String? = null,
+    val gymFrequency: String? = null,
+    val password: String? = null // optional, only if you want to update password
+)
