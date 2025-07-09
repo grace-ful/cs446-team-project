@@ -70,4 +70,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.datastore.preferences)
+
 }
