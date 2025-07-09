@@ -20,6 +20,7 @@ import com.example.cs446_fit4me.network.ApiClient
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import com.example.cs446_fit4me.model.UpdateUserRequest
 
 
 
@@ -278,10 +279,23 @@ fun ProfileScreen() {
                                     updatedFields["password"] = password
                                 }
 
+                                val updateRequest = UpdateUserRequest(
+                                    name = if (updatedFields.containsKey("name")) name.trim() else null,
+                                    age = if (updatedFields.containsKey("age")) age.toIntOrNull() else null,
+                                    heightCm = if (updatedFields.containsKey("heightCm")) totalInches else null,
+                                    weightKg = if (updatedFields.containsKey("weightKg")) weightKg else null,
+                                    location = if (updatedFields.containsKey("location")) location.trim() else null,
+                                    timePreference = if (updatedFields.containsKey("timePreference")) timePreference else null,
+                                    experienceLevel = if (updatedFields.containsKey("experienceLevel")) experienceLevel else null,
+                                    gymFrequency = if (updatedFields.containsKey("gymFrequency")) gymFrequency else null,
+                                    password = if (updatedFields.containsKey("password")) password else null
+                                )
+
+
                                 if (updatedFields.isNotEmpty()) {
                                     ApiClient.userApiService.updateUser(
                                         userId = userId,
-                                        updateData = updatedFields
+                                        updateData = updateRequest
                                     )
                                     println("✅ Profile update success")
                                 } else {
