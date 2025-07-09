@@ -9,11 +9,16 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
+import com.example.cs446_fit4me.datastore.UserPreferencesManager
+import com.example.cs446_fit4me.network.ApiClient
+import kotlinx.coroutines.flow.collectLatest
+
 
 fun filterDigits(input: String): String = input.filter { it.isDigit() }
 fun filterFloatInput(input: String): String =
@@ -21,19 +26,65 @@ fun filterFloatInput(input: String): String =
 
 @Composable
 fun ProfileScreen() {
-    var name by remember { mutableStateOf("John Doe") }
-    var age by remember { mutableStateOf("25") }
-    var heightFeet by remember { mutableStateOf("5") }
-    var heightInches by remember { mutableStateOf("10") }
-    var weightLbs by remember { mutableStateOf("170") }
-    var location by remember { mutableStateOf("Toronto") }
-    var email by remember { mutableStateOf("john@example.com") }
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+
+    var name by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+    var heightFeet by remember { mutableStateOf("") }
+    var heightInches by remember { mutableStateOf("") }
+    var weightLbs by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    var timePreference by remember { mutableStateOf("MORNING") }
+    var timePreference by remember { mutableStateOf("NONE") }
     var experienceLevel by remember { mutableStateOf("BEGINNER") }
-    var gymFrequency by remember { mutableStateOf("REGULARLY") }
+    var gymFrequency by remember { mutableStateOf("NEVER") }
+
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    // Fetch user data on first composition
+    LaunchedEffect(Unit) {
+        userPrefs.userIdFlow.collectLatest { userId ->
+            if (userId != null) {
+                try {
+                    val user = ApiClient.userApiService.getUserById(userId)
+                    name = user.name ?: ""
+                    age = user.age.toString()
+                    val totalInches = user.heightCm // <- remember, heightCm holds inches as per your backend setup
+                    heightFeet = (totalInches / 12).toString()
+                    heightInches = (totalInches % 12).toString()
+                    weightLbs = (user.weightKg * 2.20462f).toInt().toString()
+                    location = user.location ?: ""
+                    email = user.email ?: ""
+                    timePreference = user.timePreference ?: "NONE"
+                    experienceLevel = user.experienceLevel ?: "BEGINNER"
+                    gymFrequency = user.gymFrequency ?: "NEVER"
+                } catch (e: Exception) {
+                    error = e.localizedMessage ?: "Failed to load profile."
+                } finally {
+                    loading = false
+                }
+            }
+        }
+    }
+
+    if (loading) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (error != null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Error: $error", color = MaterialTheme.colorScheme.error)
+        }
+        return
+    }
 
     val originalState = remember {
         listOf(
@@ -41,7 +92,6 @@ fun ProfileScreen() {
             timePreference, experienceLevel, gymFrequency, password, confirmPassword
         )
     }
-
 
     val isAgeValid = age.toIntOrNull()?.let { it in 5..120 } == true
     val isHeightValid = heightFeet.toIntOrNull()?.let { it in 3..8 } == true &&

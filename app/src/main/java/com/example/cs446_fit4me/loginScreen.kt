@@ -13,6 +13,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.example.cs446_fit4me.network.ApiClient
 import com.google.gson.Gson
 import java.io.IOException
+import androidx.compose.ui.platform.LocalContext
+import com.example.cs446_fit4me.datastore.UserPreferencesManager
+
 
 
 @Composable
@@ -22,6 +25,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+
 
     fun login() {
         isLoading = true
@@ -36,6 +43,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
 
                 val response = ApiClient.userApiService.login(request)
                 println("Login Success: $response")
+
+                userPrefs.saveUserId(response.id)
 
                 isLoading = false
                 onLoginSuccess()

@@ -16,7 +16,9 @@ import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.model.SignupRequest
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
+import com.example.cs446_fit4me.datastore.UserPreferencesManager
+import androidx.compose.ui.platform.LocalContext
+
 
 
 fun filterDigits(input: String): String = input.filter { it.isDigit() }
@@ -47,6 +49,10 @@ fun SignUpScreen(
     var submitted by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+
 
 
     val isAgeValid = age.toIntOrNull()?.let { it in 5..120 } == true
@@ -97,6 +103,10 @@ fun SignUpScreen(
 
                 val response = ApiClient.userApiService.signup(request)   // <-- POST /user/signup
                 println(response)
+                scope.launch {
+                    userPrefs.saveUserId(response.id) // Save user ID from backend
+                }
+
                 isLoading = false
                 onSignUpSuccess()                          // Navigate away or show success
             } catch (e: Exception) {
