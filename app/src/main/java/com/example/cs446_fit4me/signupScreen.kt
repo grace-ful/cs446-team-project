@@ -12,7 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseAuth
+import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.model.SignupRequest
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+
 
 fun filterDigits(input: String): String = input.filter { it.isDigit() }
 fun filterFloatInput(input: String): String =
@@ -41,6 +46,9 @@ fun SignUpScreen(
     var isLoading by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
 
+    val scope = rememberCoroutineScope()
+
+
     val isAgeValid = age.toIntOrNull()?.let { it in 5..120 } == true
     val isHeightValid = heightFeet.toIntOrNull()?.let { it in 3..8 } == true &&
             heightInches.toIntOrNull()?.let { it in 0..11 } == true
@@ -57,32 +65,47 @@ fun SignUpScreen(
             confirmPassword.isNotBlank() &&
             isPasswordMatch
 
-    val auth = FirebaseAuth.getInstance()
+//    val auth = FirebaseAuth.getInstance()
 
     fun signUp() {
         submitted = true
         if (!isFormValid) return
 
-        val formattedHeight = "${heightFeet.trim()}'${heightInches.trim()}\""
-        val parsedWeight = weightLbs.trim().toFloatOrNull() ?: 0f
+        // Convert imperial to metric
+        val feet = heightFeet.trim().toIntOrNull() ?: 0
+        val inches = heightInches.trim().toIntOrNull() ?: 0
+        val totalInches = feet * 12 + inches
 
-        isLoading = true
-        error = null
+        val weightKg = (weightLbs.trim().toFloatOrNull() ?: 0f) * 0.453592f
 
-        if (isFormValid) {
-            onSignUpSuccess()
+        scope.launch {
+            isLoading = true
+            error = null
+            try {
+                val request = SignupRequest(
+                    email = email.trim(),
+                    name = name.trim(),
+                    password = password,
+                    heightCm = totalInches,
+                    weightKg = weightKg,
+                    age = age.trim().toInt(),
+                    location = location.trim(),
+                    timePreference = timePreference,
+                    experienceLevel = experienceLevel,
+                    gymFrequency = gymFrequency
+                )
+
+                val response = ApiClient.userApiService.signup(request)   // <-- POST /user/signup
+                println(response)
+                isLoading = false
+                onSignUpSuccess()                          // Navigate away or show success
+            } catch (e: Exception) {
+                isLoading = false
+                error = e.localizedMessage ?: "Signup failed"
+            }
         }
-//        auth.createUserWithEmailAndPassword(email.trim(), password)
-//            .addOnCompleteListener { task ->
-//                isLoading = false
-//                if (task.isSuccessful) {
-//                    // Save name, formattedHeight, parsedWeight, etc.
-//                    onSignUpSuccess()
-//                } else {
-//                    error = task.exception?.localizedMessage ?: "Signup failed"
-//                }
-//            }
     }
+
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
