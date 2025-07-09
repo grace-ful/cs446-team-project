@@ -8,7 +8,8 @@
 		"data": "tsc -b && node ./dist/scripts/fetchAndSave.js",
 		"seed": "tsc -b && node ./dist/scripts/seedExerciseData.js",
 		"y11": "tsc -b && node ./dist/scripts/fetchAndSave.js && node ./dist/scripts/seedExerciseData.js",
-		"y11-dev": "tsc -b && node ./dist/scripts/fetchAndSave.js && node ./dist/scripts/seedExerciseData.js && npx prisma studio"
+		"y11-dev": "tsc -b && node ./dist/scripts/fetchAndSave.js && node ./dist/scripts/seedExerciseData.js && npx prisma studio",
+		"gen-work": "tsc -b && node ./dist/scripts/seedWorkoutData.js"
 	},
 	"keywords": [],
 	"author": "",
