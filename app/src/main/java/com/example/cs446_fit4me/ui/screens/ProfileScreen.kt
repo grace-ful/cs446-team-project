@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import com.example.cs446_fit4me.model.UpdateUserRequest
-
+import com.example.cs446_fit4me.model.*
 
 
 fun filterDigits(input: String): String = input.filter { it.isDigit() }
@@ -66,9 +66,9 @@ fun ProfileScreen() {
                     weightLbs = (user.weightKg * 2.20462f).toInt().toString()
                     location = user.location ?: ""
                     email = user.email ?: ""
-                    timePreference = user.timePreference ?: "NONE"
-                    experienceLevel = user.experienceLevel ?: "BEGINNER"
-                    gymFrequency = user.gymFrequency ?: "NEVER"
+                    timePreference = user.timePreference.name
+                    experienceLevel = user.experienceLevel.name
+                    gymFrequency = user.gymFrequency.name
                 } catch (e: Exception) {
                     error = e.localizedMessage ?: "Failed to load profile."
                 } finally {
@@ -285,18 +285,20 @@ fun ProfileScreen() {
                                     heightCm = if (updatedFields.containsKey("heightCm")) totalInches else null,
                                     weightKg = if (updatedFields.containsKey("weightKg")) weightKg else null,
                                     location = if (updatedFields.containsKey("location")) location.trim() else null,
-                                    timePreference = if (updatedFields.containsKey("timePreference")) timePreference else null,
-                                    experienceLevel = if (updatedFields.containsKey("experienceLevel")) experienceLevel else null,
-                                    gymFrequency = if (updatedFields.containsKey("gymFrequency")) gymFrequency else null,
+                                    timePreference = if (updatedFields.containsKey("timePreference")) TimePreference.valueOf(timePreference) else null,
+                                    experienceLevel = if (updatedFields.containsKey("experienceLevel")) ExperienceLevel.valueOf(experienceLevel) else null,
+                                    gymFrequency = if (updatedFields.containsKey("gymFrequency")) GymFrequency.valueOf(gymFrequency) else null,
                                     password = if (updatedFields.containsKey("password")) password else null
                                 )
 
 
+
                                 if (updatedFields.isNotEmpty()) {
-                                    ApiClient.userApiService.updateUser(
+                                    val response = ApiClient.userApiService.updateUser(
                                         userId = userId,
                                         updateData = updateRequest
                                     )
+                                    println(response)
                                     println("✅ Profile update success")
                                 } else {
                                     println("⚠️ No changes to update")

@@ -13,7 +13,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.cs446_fit4me.network.ApiClient
-import com.example.cs446_fit4me.model.SignupRequest
+import com.example.cs446_fit4me.model.*
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
@@ -40,9 +40,10 @@ fun SignUpScreen(
     var weightLbs by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
 
-    var timePreference by remember { mutableStateOf("NONE") }
-    var experienceLevel by remember { mutableStateOf("BEGINNER") }
-    var gymFrequency by remember { mutableStateOf("NEVER") }
+    var timePreference by remember { mutableStateOf(TimePreference.NONE) }
+    var experienceLevel by remember { mutableStateOf(ExperienceLevel.BEGINNER) }
+    var gymFrequency by remember { mutableStateOf(GymFrequency.NEVER) }
+
 
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -231,20 +232,33 @@ fun SignUpScreen(
         }
 
         item {
-            EnumDropdown("Time Preference", listOf("NONE", "MORNING", "AFTERNOON", "EVENING", "NIGHT"), timePreference) {
-                timePreference = it
+            EnumDropdown(
+                "Time Preference",
+                TimePreference.values().map { it.name },
+                timePreference.name
+            ) { selected ->
+                timePreference = TimePreference.valueOf(selected)
+            }
+
+        }
+
+        item {
+            EnumDropdown(
+                "Experience Level",
+                ExperienceLevel.values().map { it.name },
+                experienceLevel.name
+            ) { selected ->
+                experienceLevel = ExperienceLevel.valueOf(selected)
             }
         }
 
         item {
-            EnumDropdown("Experience Level", listOf("BEGINNER", "INTERMEDIATE", "ADVANCED", "ATHLETE", "COACH"), experienceLevel) {
-                experienceLevel = it
-            }
-        }
-
-        item {
-            EnumDropdown("Gym Frequency", listOf("NEVER", "RARELY", "OCCASIONALLY", "REGULARLY", "FREQUENTLY", "DAILY"), gymFrequency) {
-                gymFrequency = it
+            EnumDropdown(
+                "Gym Frequency",
+                GymFrequency.values().map { it.name },
+                gymFrequency.name
+            ) { selected ->
+                gymFrequency = GymFrequency.valueOf(selected)
             }
         }
 

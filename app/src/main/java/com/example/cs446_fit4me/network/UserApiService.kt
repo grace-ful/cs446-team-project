@@ -3,10 +3,12 @@ package com.example.cs446_fit4me.network
 import com.example.cs446_fit4me.model.LoginRequest
 import com.example.cs446_fit4me.model.SignupRequest
 import com.example.cs446_fit4me.model.UserResponse
+import com.example.cs446_fit4me.model.UpdateUserRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.PUT
 
 interface UserApiService {
 
