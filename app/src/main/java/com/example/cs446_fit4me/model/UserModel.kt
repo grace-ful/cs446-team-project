@@ -40,7 +40,8 @@ data class UserResponse(
     val timePreference: TimePreference,
     val experienceLevel: ExperienceLevel,
     val gymFrequency: GymFrequency,
-    val createdAt: String
+    val createdAt: String,
+    val token: String,
 )
 
 data class ErrorResponse(val error: String)

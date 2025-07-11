@@ -14,9 +14,8 @@ import com.example.cs446_fit4me.network.ApiClient
 import com.google.gson.Gson
 import java.io.IOException
 import androidx.compose.ui.platform.LocalContext
+import com.example.cs446_fit4me.datastore.TokenManager
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
-
-
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit) {
@@ -41,15 +40,17 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
                     password = password
                 )
 
-                val response = ApiClient.userApiService.login(request)
+                val response = ApiClient.getUserApi(context).login(request) // ← Use updated context-aware client
                 println("Login Success: $response")
 
                 userPrefs.saveUserId(response.id)
+                TokenManager.saveToken(context, response.token)
 
                 isLoading = false
                 onLoginSuccess()
             } catch (e: Exception) {
                 isLoading = false
+                e.printStackTrace()
 
                 error = when (e) {
                     is retrofit2.HttpException -> {
@@ -69,6 +70,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
             }
         }
     }
+
 
 
 

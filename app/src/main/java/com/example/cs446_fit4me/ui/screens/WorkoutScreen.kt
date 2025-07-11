@@ -18,9 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.network.ApiClient
@@ -30,26 +32,26 @@ import com.example.cs446_fit4me.network.ApiClient
 fun WorkoutScreen(
     workoutViewModel: WorkoutViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
+
     val myWorkouts by remember { derivedStateOf { workoutViewModel.myWorkouts } }
 
 
     var standardWorkouts by remember { mutableStateOf<List<WorkoutModel>>(emptyList()) }
     var standardWorkoutsLoaded by remember { mutableStateOf(false) }
 
+    // ✅ Trigger standard workout fetch through ViewModel
     LaunchedEffect(Unit) {
-        try {
-            val response = ApiClient.workoutApiService.getGeneralWorkouts()
-            println("Standard workouts1: $response")
-            standardWorkouts = response.map { it.toWorkoutModel() }
-            println("Standard workouts2: $standardWorkouts")
-            standardWorkoutsLoaded = true
-        } catch (e: Exception) {
-            println("Failed to load standard workouts: ${e.message}")
-        }
+        workoutViewModel.fetchStandardWorkouts(context)
     }
 
-    LaunchedEffect(Unit) {
-        workoutViewModel.fetchUserWorkouts("621b6f5d-aa5d-422b-bd15-87f23724396c")
+    // ✅ Trigger user workout fetch (replace hardcoded userId when ready)
+    LaunchedEffect(userId) {
+        userId?.let {
+            workoutViewModel.fetchUserWorkouts(it, context)
+        }
     }
 
     var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }

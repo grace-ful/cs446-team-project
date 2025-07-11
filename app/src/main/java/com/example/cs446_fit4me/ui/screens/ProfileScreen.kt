@@ -57,7 +57,7 @@ fun ProfileScreen() {
         userPrefs.userIdFlow.collectLatest { userId ->
             if (userId != null) {
                 try {
-                    val user = ApiClient.userApiService.getUserById(userId)
+                    val user = ApiClient.getUserApi(context).getUserById(userId)
                     name = user.name ?: ""
                     age = user.age.toString()
                     val totalInches = user.heightCm // <- remember, heightCm holds inches as per your backend setup
@@ -294,7 +294,7 @@ fun ProfileScreen() {
 
 
                                 if (updatedFields.isNotEmpty()) {
-                                    val response = ApiClient.userApiService.updateUser(
+                                    val response = ApiClient.getUserApi(context).updateUser(
                                         userId = userId,
                                         updateData = updateRequest
                                     )

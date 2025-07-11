@@ -12,7 +12,7 @@ interface ExerciseApiService {
 
     // GET /exercise-template/by-user/{userId}
     @GET("exercise-template/by-user/{userId}")
-    suspend fun getUserExercises(@Path("userId") userId: String): List<ExerciseTemplate>
+    suspend fun getUserExercises(): List<ExerciseTemplate>
 
     // GET /exercise-template/{id}
     @GET("exercise-template/{id}")

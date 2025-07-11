@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 // Extension property for DataStore
-private val Context.dataStore by preferencesDataStore(name = "user_prefs")
+val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
 class UserPreferencesManager(private val context: Context) {
 

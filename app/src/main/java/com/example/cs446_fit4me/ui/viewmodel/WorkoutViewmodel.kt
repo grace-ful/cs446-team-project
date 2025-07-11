@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,14 +17,10 @@ class WorkoutViewModel : ViewModel() {
     private val _standardWorkouts = mutableStateListOf<WorkoutModel>()
     val standardWorkouts: List<WorkoutModel> get() = _standardWorkouts
 
-    init {
-        fetchStandardWorkouts()
-    }
-
-    private fun fetchStandardWorkouts() {
+    fun fetchStandardWorkouts(context: Context) {
         viewModelScope.launch {
             try {
-                val response = ApiClient.workoutApiService.getGeneralWorkouts()
+                val response = ApiClient.getWorkoutApi(context).getGeneralWorkouts()
                 _standardWorkouts.clear()
                 _standardWorkouts.addAll(response.map { it.toWorkoutModel() })
             } catch (e: Exception) {
@@ -32,10 +29,10 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-    fun fetchUserWorkouts(userId: String) {
+    fun fetchUserWorkouts(userId: String, context: Context) {
         viewModelScope.launch {
             try {
-                val response = ApiClient.workoutApiService.getUserWorkouts(userId)
+                val response = ApiClient.getWorkoutApi(context).getUserWorkouts(userId)
                 _myWorkouts.clear()
                 _myWorkouts.addAll(response.map { it.toWorkoutModel() })
             } catch (e: Exception) {
@@ -43,6 +40,7 @@ class WorkoutViewModel : ViewModel() {
             }
         }
     }
+
 
 
     fun createEmptyWorkout(name: String = "Untitled"): String {

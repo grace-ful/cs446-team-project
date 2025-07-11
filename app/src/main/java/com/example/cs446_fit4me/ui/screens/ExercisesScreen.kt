@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,11 +38,22 @@ import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
 import kotlinx.coroutines.launch
-
+import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.cs446_fit4me.datastore.UserPreferencesManager
+import android.util.Log
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.cs446_fit4me.datastore.dataStore
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExercisesScreen(navController: NavController? = null) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
+
     var searchText by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
 
@@ -66,8 +78,12 @@ fun ExercisesScreen(navController: NavController? = null) {
 
 
     LaunchedEffect(Unit) {
-        try {
-            val response = ApiClient.exerciseApiService.getGeneralExercises()
+        val token = context.dataStore.data
+            .map { it[stringPreferencesKey("jwt_token")] ?: "No token found" }
+            .first()
+        Log.d("JWT_DEBUG", "Token before fetching exercises: $token")
+        try{
+            val response = ApiClient.getExerciseApi(context).getGeneralExercises()
             println(response)
             allExercises = response.map { exerciseTemplate ->
                 exerciseTemplate.toExercise()
@@ -86,8 +102,7 @@ fun ExercisesScreen(navController: NavController? = null) {
     LaunchedEffect(selectedTabIndex) {
         if (selectedTabIndex == 1 && !userExercisesLoaded) {
             try {
-                val userId = "621b6f5d-aa5d-422b-bd15-87f23724396c"
-                val response = ApiClient.exerciseApiService.getUserExercises(userId)
+                val response = ApiClient.getExerciseApi(context).getUserExercises()
                 println(response)
                 myExercises = response.map { it.toExercise() }
                 println(myExercises)
@@ -97,6 +112,7 @@ fun ExercisesScreen(navController: NavController? = null) {
             }
         }
     }
+
 
 
 
@@ -326,6 +342,10 @@ fun CreateExerciseModal(
     onExerciseCreated: (Exercise) -> Unit,
     onExerciseUpdated: (Exercise) -> Unit
 ) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
+
     var name by remember { mutableStateOf(initialExercise?.name ?: "") }
     //var name by remember { mutableStateOf("") }
     var selectedBodyPart by remember { mutableStateOf(initialExercise?.bodyPart) }
@@ -464,7 +484,7 @@ fun CreateExerciseModal(
                                         createdAt = initialExercise.createdAt,
                                         userId = initialExercise.userId
                                     )
-                                    val updated = ApiClient.exerciseApiService.updateExercise(initialExercise.id, updatedTemplate)
+                                    val updated = ApiClient.getExerciseApi(context).updateExercise(initialExercise.id, updatedTemplate)
                                     onExerciseUpdated(updated.toExercise());
                                 } else {
                                     val req = CreateExerciseRequest(
@@ -475,7 +495,7 @@ fun CreateExerciseModal(
                                         isGeneral = false,
                                         userId = "621b6f5d-aa5d-422b-bd15-87f23724396c"
                                     )
-                                    val created = ApiClient.exerciseApiService.createExercise(req)
+                                    val created = ApiClient.getExerciseApi(context).createExercise(req)
                                     onExerciseCreated(created.toExercise())
                                 }
                             } catch (e: Exception) {
