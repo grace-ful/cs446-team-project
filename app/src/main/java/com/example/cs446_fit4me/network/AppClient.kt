@@ -7,8 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-//    private const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD
-    private const val BASE_URL = "http://10.31.176.20:8080/api/" // DEV
+    private const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD
+//    private const val BASE_URL = "https://ff6a53c8c329.ngrok-free.app/api/" // DEV
 
     // Create Retrofit instance with AuthInterceptor
     private fun createRetrofit(context: Context): Retrofit {

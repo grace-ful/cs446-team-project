@@ -54,27 +54,31 @@ fun ProfileScreen() {
 
     // Fetch user data on first composition
     LaunchedEffect(Unit) {
-        userPrefs.userIdFlow.collectLatest { userId ->
-            if (userId != null) {
-                try {
-                    val user = ApiClient.getUserApi(context).getUserById(userId)
-                    name = user.name ?: ""
-                    age = user.age.toString()
-                    val totalInches = user.heightCm // <- remember, heightCm holds inches as per your backend setup
-                    heightFeet = (totalInches / 12).toString()
-                    heightInches = (totalInches % 12).toString()
-                    weightLbs = (user.weightKg * 2.20462f).toInt().toString()
-                    location = user.location ?: ""
-                    email = user.email ?: ""
-                    timePreference = user.timePreference.name
-                    experienceLevel = user.experienceLevel.name
-                    gymFrequency = user.gymFrequency.name
-                } catch (e: Exception) {
-                    error = e.localizedMessage ?: "Failed to load profile."
-                } finally {
-                    loading = false
-                }
-            }
+        try {
+            loading = true
+            val user = ApiClient.getUserApi(context).getUserById()
+
+            name = user.name
+            age = user.age.toString()
+
+            // Backend stores height in inches
+            val totalInches = user.heightCm
+            heightFeet = (totalInches / 12).toString()
+            heightInches = (totalInches % 12).toString()
+
+            weightLbs = (user.weightKg * 2.20462f).toInt().toString()
+
+            location = user.location ?: ""
+            email = user.email ?: ""
+
+            timePreference = user.timePreference.name
+            experienceLevel = user.experienceLevel.name
+            gymFrequency = user.gymFrequency.name
+
+        } catch (e: Exception) {
+            error = e.localizedMessage ?: "Failed to load profile."
+        } finally {
+            loading = false
         }
     }
 

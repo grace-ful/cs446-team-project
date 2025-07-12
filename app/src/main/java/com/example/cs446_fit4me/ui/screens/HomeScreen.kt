@@ -22,7 +22,7 @@ import com.example.cs446_fit4me.navigation.BottomNavItem
 
 
 @Composable
-fun HomeScreen(navController: NavController? = null, userName: String = "John") {
+fun HomeScreen(navController: NavController? = null, username: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -43,7 +43,7 @@ fun HomeScreen(navController: NavController? = null, userName: String = "John") 
                 color = MaterialTheme.colorScheme.primary
             ) {
                 Text(
-                    text = userName.first().uppercaseChar().toString(),
+                    text = username.first().uppercaseChar().toString(),
                     fontSize = 24.sp,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimary,
@@ -92,6 +92,6 @@ fun HomeScreen(navController: NavController? = null, userName: String = "John") 
 @Composable
 fun HomeScreenPreview() {
     CS446fit4meTheme {
-        HomeScreen()
+        HomeScreen(username = "Yash")
     }
 }

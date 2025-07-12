@@ -42,8 +42,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
 
                 val response = ApiClient.getUserApi(context).login(request) // ← Use updated context-aware client
                 println("Login Success: $response")
-
-                userPrefs.saveUserId(response.id)
                 TokenManager.saveToken(context, response.token)
 
                 isLoading = false
