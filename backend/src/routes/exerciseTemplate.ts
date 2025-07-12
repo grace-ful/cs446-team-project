@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
-import { MuscleGroup, BodyPart, AuthRequest } from "../lib/types";
+import { MuscleGroup, BodyPart, AuthRequest, Equipment } from "../lib/types";
 import authMiddleware from "../middleware/authMiddleware";
 
 const exerciseTemplateRouter = Router();
@@ -85,6 +85,14 @@ exerciseTemplateRouter.post(
 		if (!Object.values(BodyPart).includes(bodyPart)) {
 			return res.status(400).json({ error: "Invalid bodyPart value." });
 		}
+
+		if (!Object.values(Equipment).includes(equipment)){
+				return res.status(400).json({
+					error: `Invalid equipment. Must be one of: ${Object.values(
+						Equipment
+					).join(", ")}.`,
+				});
+			}
 
 		try {
 			const newExercise = await prisma.exerciseTemplate.create({

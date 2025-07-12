@@ -6,6 +6,7 @@ import exerciseSessionRouter from "./exerciseSession";
 import exerciseSetRouter from "./exerciseSet";
 import workoutSessionRouter from "./workoutSession";
 import prRouter from "./pr";
+import matchesRouter from "./matches";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/exercise-sessions", exerciseSessionRouter);
 router.use("/exercise-set", exerciseSetRouter);
 router.use("/workout-sessions", workoutSessionRouter);
 router.use("/pr", prRouter);
+router.use("/matches", matchesRouter);
 
 export default router;

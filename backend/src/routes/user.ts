@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
-import { TimePreference, ExperienceLevel, GymFrequency, AuthRequest } from "../lib/types";
+import { TimePreference, ExperienceLevel, GymFrequency, AuthRequest, Equipment } from "../lib/types";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import authMiddleware from "../middleware/authMiddleware";

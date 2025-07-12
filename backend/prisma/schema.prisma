@@ -108,6 +108,8 @@ model User {
   workoutSessions         WorkoutSession[]
   exerciseSessions        ExerciseSession[]
   PR                      PR[]
+  matchesInitiated MatchEntry[] @relation("MatchesInitiated")
+  matchesReceived  MatchEntry[] @relation("MatchesReceived")
 }
 
 model WorkoutTemplate {
@@ -198,4 +200,15 @@ model ExerciseSet {
   createdAt         DateTime        @default(now())
   ExerciseSession   ExerciseSession @relation(fields: [exerciseSessionId], references: [id])
   exerciseSessionId String
+}
+
+model MatchEntry {
+  id String @id @default(uuid())
+  userId String
+  matchedUserId String
+  score Float
+  createdAt DateTime @default(now())
+
+  matcher     User @relation("MatchesInitiated", fields: [userId], references: [id])
+  matchee     User @relation("MatchesReceived", fields: [matchedUserId], references: [id])
 }
