@@ -11,7 +11,8 @@
 		"y11:seed": "tsc -b && node ./dist/scripts/seedExerciseData.js",
 		"y11:sync": "tsc -b && node ./dist/scripts/fetchExercises.js && node ./dist/scripts/seedExerciseData.js",
 		"y11:sync:dev": "tsc -b && node ./dist/scripts/fetchExercises.js && node ./dist/scripts/seedExerciseData.js && npx prisma studio",
-		"y11:workouts": "tsc -b && node ./dist/scripts/seedWorkoutData.js"
+		"y11:workouts": "tsc -b && node ./dist/scripts/seedWorkoutData.js",
+		"y11:users": "tsc -b && node ./dist/scripts/seedDummyUsers.js"
 	},
 	"keywords": [],
 	"author": "",

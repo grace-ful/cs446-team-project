@@ -37,21 +37,29 @@ export enum MuscleGroup {
 }
 
 export enum BodyPart {
-	BICEPS = "BICEPS",
-	TRICEPS = "TRICEPS",
-	QUADRICEPS = "QUADRICEPS",
-	HAMSTRINGS = "HAMSTRINGS",
-	CALVES = "CALVES",
-	GLUTES = "GLUTES",
-	ABDOMINALS = "ABDOMINALS",
-	LATS = "LATS",
-	TRAPEZIUS = "TRAPEZIUS",
-	FOREARMS = "FOREARMS",
-	NECK = "NECK",
-	CHEST = "CHEST",
-	SHOULDERS = "SHOULDERS",
+	ABS = "ABS",
+	ARMS = "ARMS",
 	BACK = "BACK",
+	CALVES = "CALVES",
+	CARDIO = "CARDIO",
+	CHEST = "CHEST",
+	LEGS = "LEGS",
+	SHOULDERS = "SHOULDERS",
 	OTHER = "OTHER",
+}
+
+export enum Equipment {
+	BARBELLS = "BARBELLS",
+  	BENCH = "BENCH",
+  	DUMBBELL = "DUMBBELL",
+  	GYM_MAT = "GYM_MAT",
+  	INCLINE_BENCH = "INCLINE_BENCH",
+  	KETTLEBELL = "KETTLEBELL",
+  	PULL_UP_BAR = "PULL_UP_BAR",
+  	SZ_BAR = "SZ_BAR",
+  	SWISS_BALL = "SWISS_BALL",
+  	NONE = "NONE",
+  	OTHER = "OTHER"
 }
 
 export interface AuthRequest extends Request {

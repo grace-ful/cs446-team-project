@@ -111,6 +111,17 @@ CREATE TABLE "ExerciseSet" (
 );
 
 -- CreateTable
+CREATE TABLE "MatchEntry" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "matchedUserId" TEXT NOT NULL,
+    "score" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MatchEntry_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_WorkoutTemplateExercises" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
@@ -153,6 +164,12 @@ ALTER TABLE "ExerciseSession" ADD CONSTRAINT "ExerciseSession_workoutSessionId_f
 
 -- AddForeignKey
 ALTER TABLE "ExerciseSet" ADD CONSTRAINT "ExerciseSet_exerciseSessionId_fkey" FOREIGN KEY ("exerciseSessionId") REFERENCES "ExerciseSession"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchEntry" ADD CONSTRAINT "MatchEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchEntry" ADD CONSTRAINT "MatchEntry_matchedUserId_fkey" FOREIGN KEY ("matchedUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_WorkoutTemplateExercises" ADD CONSTRAINT "_WorkoutTemplateExercises_A_fkey" FOREIGN KEY ("A") REFERENCES "ExerciseTemplate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
