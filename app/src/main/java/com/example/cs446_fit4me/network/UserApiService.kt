@@ -21,7 +21,7 @@ interface UserApiService {
     suspend fun login(@Body request: LoginRequest): UserResponse
 
     @GET("user/{id}")
-    suspend fun getUserById(@Path("id") userId: String): UserResponse
+    suspend fun getUserById(): UserResponse
 
     @PUT("user/{id}")
     suspend fun updateUser(

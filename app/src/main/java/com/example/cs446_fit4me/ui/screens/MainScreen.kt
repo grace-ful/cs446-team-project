@@ -3,21 +3,44 @@ package com.example.cs446_fit4me.ui.screens
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
+import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.SettingsNavGraph
 
+
+
+
 // Main screen that contains the bottom navigation bar and the navigation host
 @Composable
 fun MainScreen() {
+    var userName by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        try {
+            val user = ApiClient.getUserApi(context).getUserById()
+            userName = user.name
+        } catch (e: Exception) {
+            error = e.localizedMessage ?: "Failed to load user info"
+        }
+    }
+
+    if (userName == null) return // or show loading spinner
     val navController = rememberNavController()
     val bottomNavItems = listOf(
         BottomNavItem.Messages,
@@ -63,7 +86,7 @@ fun MainScreen() {
             startDestination = BottomNavItem.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(BottomNavItem.Home.route) { HomeScreen(navController) }
+            composable(BottomNavItem.Home.route) { HomeScreen(navController, username = userName!!) }
             composable(BottomNavItem.Messages.route) { MessagesScreen(navController) }
             composable(BottomNavItem.FindMatch.route) { FindMatchScreen(navController) }
             composable(BottomNavItem.Workout.route) { WorkoutScreen() }

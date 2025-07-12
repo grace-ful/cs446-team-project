@@ -18,7 +18,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import androidx.compose.ui.platform.LocalContext
-
+import com.example.cs446_fit4me.datastore.TokenManager
 
 
 fun filterDigits(input: String): String = input.filter { it.isDigit() }
@@ -102,7 +102,9 @@ fun SignUpScreen(
                     gymFrequency = gymFrequency
                 )
 
-                val response = ApiClient.userApiService.signup(request)   // <-- POST /user/signup
+                val response = ApiClient.getUserApi(context).signup(request)   // <-- POST /user/signup
+                TokenManager.saveToken(context, response.token)
+
                 println(response)
                 scope.launch {
                     userPrefs.saveUserId(response.id) // Save user ID from backend
