@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import android.util.Log
+import androidx.compose.material3.HorizontalDivider
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.cs446_fit4me.datastore.dataStore
 import kotlinx.coroutines.flow.first
@@ -303,6 +304,9 @@ fun ExercisesScreen(navController: NavController? = null) {
                 exercises = filteredExercises,
                 modifier = Modifier.weight(1f),
                 onEditClick = { editingExercise = it },
+                onDeleteClick = { toDelete ->
+                    myExercises = myExercises.filter { it.id != toDelete.id }
+                },
                 isEditable = selectedTabIndex == 1
             )
         }
@@ -528,18 +532,20 @@ fun CreateExerciseModal(
 fun ExercisesList(exercises: List<Exercise>,
                   modifier: Modifier = Modifier,
                   onEditClick: (Exercise) -> Unit = {},
+                  onDeleteClick: (Exercise) -> Unit = {},
                   isEditable: Boolean = false) {
     LazyColumn(modifier = modifier) {
         itemsIndexed(exercises) { index, exercise ->
             ExerciseListItem(
                 exercise = exercise,
-                onEditClick = if (isEditable && !exercise.isGeneric) { { onEditClick(exercise) } } else null
+                onEditClick = if (isEditable && !exercise.isGeneric) { { onEditClick(exercise) } } else null,
+                onDeleteClick = if (isEditable && !exercise.isGeneric) { { onDeleteClick(exercise) } } else null
             )
             if (index < exercises.size - 1) {
-                Divider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     thickness = 1.dp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 )
             }
         }

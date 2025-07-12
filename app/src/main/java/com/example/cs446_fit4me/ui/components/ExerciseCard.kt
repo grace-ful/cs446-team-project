@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,7 +27,8 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun ExerciseListItem(exercise: Exercise,
                      modifier: Modifier = Modifier,
-                     onEditClick: (() -> Unit)? = null) {
+                     onEditClick: (() -> Unit)? = null,
+                     onDeleteClick: (() -> Unit)? = null) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -78,6 +80,13 @@ fun ExerciseListItem(exercise: Exercise,
         }
 
         Spacer(modifier = Modifier.weight(1f))
+
+        onDeleteClick?.let {
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = it) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete Exercise")
+            }
+        }
 
         onEditClick?.let {
             Spacer(modifier = Modifier.weight(1f))
