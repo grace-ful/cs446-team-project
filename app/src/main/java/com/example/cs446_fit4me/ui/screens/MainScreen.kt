@@ -20,6 +20,7 @@ import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.SettingsNavGraph
+import com.example.cs446_fit4me.model.*
 
 
 
@@ -88,7 +89,10 @@ fun MainScreen() {
         ) {
             composable(BottomNavItem.Home.route) { HomeScreen(navController, username = userName!!) }
             composable(BottomNavItem.Messages.route) { MessagesScreen(navController) }
-            composable(BottomNavItem.FindMatch.route) { FindMatchScreen(navController) }
+            composable(BottomNavItem.FindMatch.route) {
+                MatchingScreen(matches = getMatchesForPreview()) // Replace with your real data source later!
+            }
+
             composable(BottomNavItem.Workout.route) { WorkoutScreen() }
             composable(BottomNavItem.Profile.route) { ProfileScreen() }
 
@@ -99,3 +103,9 @@ fun MainScreen() {
         }
     }
 }
+
+fun getMatchesForPreview(): List<UserMatch> = listOf(
+    UserMatch("Aryaman", 22, "Toronto", TimePreference.EVENING, ExperienceLevel.INTERMEDIATE, GymFrequency.REGULARLY, 95.5),
+    UserMatch("Priya", 21, "Delhi", TimePreference.MORNING, ExperienceLevel.BEGINNER, GymFrequency.OCCASIONALLY, 73.0),
+    UserMatch("Alex", 24, "Vancouver", TimePreference.NIGHT, ExperienceLevel.ADVANCED, GymFrequency.DAILY, 58.0)
+)
