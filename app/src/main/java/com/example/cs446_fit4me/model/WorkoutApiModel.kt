@@ -9,13 +9,6 @@ data class WorkoutTemplateResponse(
     val createdAt: String
 )
 
-data class CreateWorkoutTemplateRequest(
-    val name: String,
-    val isGeneral: Boolean = false,
-    val userId: String,
-    val exerciseIds: List<String>
-)
-
 data class ExerciseIdListRequest(
     val exerciseIds: List<String>
 )

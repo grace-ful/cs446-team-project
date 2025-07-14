@@ -57,3 +57,13 @@ data class UpdateUserRequest(
     val gymFrequency: GymFrequency? = null,
     val password: String? = null // optional, only if you want to update password
 )
+
+data class UserMatch(
+    val name: String,
+    val age: Int,
+    val location: String,
+    val timePreference: TimePreference,
+    val experienceLevel: ExperienceLevel,
+    val gymFrequency: GymFrequency,
+    val score: Double
+)

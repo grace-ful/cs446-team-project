@@ -22,37 +22,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.model.*
-import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutScreen(
+    navController: NavController,
     workoutViewModel: WorkoutViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesManager(context) }
     val userId by userPrefs.userIdFlow.collectAsState(initial = null)
 
+
+    var standardWorkouts = workoutViewModel.standardWorkouts
     val myWorkouts by remember { derivedStateOf { workoutViewModel.myWorkouts } }
-
-
-    var standardWorkouts by remember { mutableStateOf<List<WorkoutModel>>(emptyList()) }
-    var standardWorkoutsLoaded by remember { mutableStateOf(false) }
 
     // ✅ Trigger standard workout fetch through ViewModel
     LaunchedEffect(Unit) {
         workoutViewModel.fetchStandardWorkouts(context)
+        workoutViewModel.fetchUserWorkouts(context)
     }
 
     // ✅ Trigger user workout fetch (replace hardcoded userId when ready)
-    LaunchedEffect(userId) {
-        userId?.let {
-            workoutViewModel.fetchUserWorkouts(it, context)
-        }
-    }
 
     var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }
     var selectedStandardWorkoutName by remember { mutableStateOf<String?>(null) }
@@ -67,7 +63,7 @@ fun WorkoutScreen(
                     if (hasSelection) {
                         showConfirmDialog = true
                     } else {
-                        workoutViewModel.addMockWorkout()
+                        navController.navigate("create_workout")
                     }
                 },
                 containerColor = if (hasSelection) MaterialTheme.colorScheme.error else Color(0xFF007AFF)
