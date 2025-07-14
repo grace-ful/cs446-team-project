@@ -86,7 +86,7 @@ fun UserCard(
                 else -> MaterialTheme.colorScheme.primary
             }
             Text(
-                text = "Score: ${formatScore(match.score)}",
+                text = "Score: ${formatScore(match.score.toInt())}",
                 color = scoreColor,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,

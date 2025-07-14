@@ -86,7 +86,7 @@ fun MatchDetailSheet(
                 ProfileField(label = "Gym Frequency", value = match.matchee?.gymFrequency?.name ?: "")
                 ProfileField(
                     label = "Match Score",
-                    value = formatScore(match.score),
+                    value = formatScore(match.score.toInt()),
                     valueColor = when {
                         match.score < 60 -> MaterialTheme.colorScheme.error
                         match.score < 85 -> MaterialTheme.colorScheme.tertiary
