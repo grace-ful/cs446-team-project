@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
+import MatchEntry
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.cs446_fit4me.model.UserMatch
 import com.example.cs446_fit4me.ui.components.MatchDetailSheet
 import com.example.cs446_fit4me.ui.components.UserCard
 import kotlinx.coroutines.launch
@@ -15,13 +15,12 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatchingScreen(
-    matches: List<UserMatch>
+    matches: List<MatchEntry>
 ) {
-    var selectedMatch by remember { mutableStateOf<UserMatch?>(null) }
+    var selectedMatch: MatchEntry? by remember { mutableStateOf(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
 
-    // Only show the bottom sheet if a match is selected
     if (selectedMatch != null) {
         ModalBottomSheet(
             onDismissRequest = {
@@ -40,7 +39,6 @@ fun MatchingScreen(
             )
         }
 
-        // Safely show the sheet only when a match is selected
         LaunchedEffect(selectedMatch) {
             if (!sheetState.isVisible) {
                 sheetState.show()
@@ -48,7 +46,6 @@ fun MatchingScreen(
         }
     }
 
-    // List of user cards
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -58,7 +55,6 @@ fun MatchingScreen(
         items(matches) { match ->
             UserCard(match = match) {
                 selectedMatch = match
-                // sheetState.show() is managed by LaunchedEffect above
             }
         }
     }

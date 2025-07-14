@@ -43,4 +43,7 @@ object ApiClient {
         return createRetrofit(context).create(TestApiService::class.java)
     }
 
+    fun getMatchingApi(context: Context): MatchingApiService {
+        return createRetrofit(context).create(MatchingApiService::class.java)
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.components
 
+import MatchEntry
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -21,7 +22,7 @@ import com.example.cs446_fit4me.model.*
 
 @Composable
 fun MatchDetailSheet(
-    match: UserMatch,
+    match: MatchEntry,
     onClose: () -> Unit
 ) {
     Column(
@@ -44,7 +45,7 @@ fun MatchDetailSheet(
                         .background(MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
-                        text = match.name.first().toString(),
+                        text = match.matchee?.name?.first().toString(),
                         fontSize = 22.sp,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
@@ -52,7 +53,7 @@ fun MatchDetailSheet(
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Text(
-                    text = match.name,
+                    text = match.matchee?.name ?: "",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -76,11 +77,13 @@ fun MatchDetailSheet(
             shape = RoundedCornerShape(18.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                ProfileField(label = "Age", value = match.age.toString())
-                ProfileField(label = "Location", value = match.location)
-                ProfileField(label = "Time Preference", value = match.timePreference.name)
-                ProfileField(label = "Experience Level", value = match.experienceLevel.name)
-                ProfileField(label = "Gym Frequency", value = match.gymFrequency.name)
+                ProfileField(label = "Age", value = match.matchee?.age.toString())
+                ProfileField(label = "Location", value = match.matchee?.location ?: "" )
+                ProfileField(label = "Time Preference", value = match.matchee?.timePreference?.name
+                    ?: "")
+                ProfileField(label = "Experience Level", value = match.matchee?.experienceLevel?.name
+                    ?: "")
+                ProfileField(label = "Gym Frequency", value = match.matchee?.gymFrequency?.name ?: "")
                 ProfileField(
                     label = "Match Score",
                     value = formatScore(match.score),
@@ -121,19 +124,19 @@ fun ProfileField(
 
 
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewMatchDetailSheet() {
-    MatchDetailSheet(
-        match = UserMatch(
-            name = "Aryaman",
-            age = 22,
-            location = "Toronto",
-            timePreference = TimePreference.EVENING,
-            experienceLevel = ExperienceLevel.INTERMEDIATE,
-            gymFrequency = GymFrequency.REGULARLY,
-            score = 91.0
-        ),
-        onClose = {}
-    )
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewMatchDetailSheet() {
+//    MatchDetailSheet(
+//        match = UserMatch(
+//            name = "Aryaman",
+//            age = 22,
+//            location = "Toronto",
+//            timePreference = TimePreference.EVENING,
+//            experienceLevel = ExperienceLevel.INTERMEDIATE,
+//            gymFrequency = GymFrequency.REGULARLY,
+//            score = 91.0
+//        ),
+//        onClose = {}
+//    )
+//}

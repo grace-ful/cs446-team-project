@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.components
 
+import MatchEntry
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,8 +20,9 @@ import androidx.compose.ui.unit.sp
 import com.example.cs446_fit4me.model.UserMatch
 import androidx.compose.ui.tooling.preview.Preview
 
+
 @Composable
-fun formatScore(score: Double): String {
+fun formatScore(score: Int): String {
     return if (score % 1.0 == 0.0) {
         // Whole number, show as integer
         score.toInt().toString()
@@ -32,7 +34,7 @@ fun formatScore(score: Double): String {
 
 @Composable
 fun UserCard(
-    match: UserMatch,
+    match: MatchEntry,
     onClick: () -> Unit
 ) {
     Card(
@@ -57,7 +59,7 @@ fun UserCard(
                     .background(MaterialTheme.colorScheme.primary)
             ) {
                 Text(
-                    text = match.name.first().toString(),
+                    text = match.matchee?.name?.firstOrNull()?.toString() ?: "",
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold
@@ -71,7 +73,7 @@ fun UserCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = match.name,
+                    text = match.matchee?.name ?: "",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -95,19 +97,19 @@ fun UserCard(
 }
 
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewUserCard() {
-    UserCard(
-        match = UserMatch(
-            name = "Aryaman",
-            age = 22,
-            location = "Toronto",
-            timePreference = com.example.cs446_fit4me.model.TimePreference.EVENING,
-            experienceLevel = com.example.cs446_fit4me.model.ExperienceLevel.INTERMEDIATE,
-            gymFrequency = com.example.cs446_fit4me.model.GymFrequency.REGULARLY,
-            score = 70.3
-        ),
-        onClick = {}
-    )
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewUserCard() {
+//    UserCard(
+//        match = UserMatch(
+//            name = "Aryaman",
+//            age = 22,
+//            location = "Toronto",
+//            timePreference = com.example.cs446_fit4me.model.TimePreference.EVENING,
+//            experienceLevel = com.example.cs446_fit4me.model.ExperienceLevel.INTERMEDIATE,
+//            gymFrequency = com.example.cs446_fit4me.model.GymFrequency.REGULARLY,
+//            score = 70.3
+//        ),
+//        onClick = {}
+//    )
+//}
