@@ -1,6 +1,9 @@
 package com.example.cs446_fit4me.ui.screens
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -8,8 +11,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -130,18 +135,31 @@ fun MainScreen() {
 
             composable("select_exercise") {
                 val context = LocalContext.current
+                val isLoading by workoutViewModel.isLoadingExercises
 
                 LaunchedEffect(Unit) {
                     workoutViewModel.fetchAllExerciseTemplates(context)
                 }
 
-                SelectExerciseScreen(
-                    navController = navController,
-                    initiallySelected = workoutViewModel.selectedExercises,
-                    onExerciseSelected = { workoutViewModel.addExercise(it) },
-                    exercises = workoutViewModel.allExercises
-                )
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    SelectExerciseScreen(
+                        navController = navController,
+                        initiallySelected = workoutViewModel.selectedExercises,
+                        onExerciseSelected = { workoutViewModel.addExercise(it) },
+                        exercises = workoutViewModel.allExercises
+                    )
+                }
             }
+
         }
     }
 }

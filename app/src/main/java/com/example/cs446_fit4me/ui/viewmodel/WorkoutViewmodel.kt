@@ -13,6 +13,7 @@ import java.util.*
 class WorkoutViewModel : ViewModel() {
 
     val allExercises = mutableStateListOf<ExerciseTemplate>()
+    val isLoadingExercises = mutableStateOf(false)
 
     private var hasFetchedExercises = false
 
@@ -20,6 +21,7 @@ class WorkoutViewModel : ViewModel() {
         if (hasFetchedExercises) return
 
         viewModelScope.launch {
+            isLoadingExercises.value = true
             try {
                 val general = ApiClient.getExerciseApi(context).getGeneralExercises()
                 val user = ApiClient.getExerciseApi(context).getUserExercises()
@@ -29,6 +31,8 @@ class WorkoutViewModel : ViewModel() {
                 Log.d("WorkoutViewModel", "Fetched ${allExercises.size} exercises.")
             } catch (e: Exception) {
                 Log.e("WorkoutViewModel", "Error fetching exercises", e)
+            } finally {
+                isLoadingExercises.value = false
             }
         }
     }
