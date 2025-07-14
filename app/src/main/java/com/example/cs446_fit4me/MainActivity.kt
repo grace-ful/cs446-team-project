@@ -21,12 +21,17 @@ import com.example.cs446_fit4me.network.TestResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.google.android.libraries.places.api.Places
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, "AIzaSyDp7yaybG_NXQ0nPFixhdGe0SMFnd7iP5M")
+        }
 
         // TEMP TEST: Call /api/test endpoint
         ApiClient.getTestApi(this).checkStatus().enqueue(object : Callback<TestResponse> {

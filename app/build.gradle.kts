@@ -71,5 +71,7 @@ dependencies {
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.datastore.preferences)
+    implementation(libs.google.places)
+
 
 }

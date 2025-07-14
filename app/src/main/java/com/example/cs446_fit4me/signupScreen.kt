@@ -103,7 +103,6 @@ fun SignUpScreen(
                     heightFeet = heightFeet,
                     heightInches = heightInches,
                     weightLbs = weightLbs,
-                    location = location,
                     timePreference = timePreference,
                     experienceLevel = experienceLevel,
                     gymFrequency = gymFrequency,
@@ -218,7 +217,6 @@ fun ProfileSetupScreenContent(
     heightFeet: String,
     heightInches: String,
     weightLbs: String,
-    location: String,
     timePreference: TimePreference,
     experienceLevel: ExperienceLevel,
     gymFrequency: GymFrequency,
@@ -235,6 +233,34 @@ fun ProfileSetupScreenContent(
     onBack: () -> Unit,
     onSubmit: () -> Unit
 ) {
+    val context = LocalContext.current
+    val placesClient = remember { com.google.android.libraries.places.api.Places.createClient(context) }
+
+    var selectedCountry by remember { mutableStateOf("CA") }
+    var cityQuery by remember { mutableStateOf("") }
+    var cityPredictions by remember { mutableStateOf(listOf<String>()) }
+
+    // Fetch city predictions on each query change
+    LaunchedEffect(cityQuery) {
+        if (cityQuery.isNotBlank()) {
+            val request = com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest.builder()
+                .setCountries(listOf(selectedCountry))
+                .setTypesFilter(listOf("locality")) // CITIES type
+                .setQuery(cityQuery)
+                .build()
+
+            placesClient.findAutocompletePredictions(request)
+                .addOnSuccessListener { response ->
+                    cityPredictions = response.autocompletePredictions.map { it.getPrimaryText(null).toString() }
+                }
+                .addOnFailureListener {
+                    cityPredictions = listOf()
+                }
+        } else {
+            cityPredictions = listOf()
+        }
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -258,11 +284,33 @@ fun ProfileSetupScreenContent(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth())
 
-        OutlinedTextField(location, onLocationChange, label = { Text("Location") },
-            modifier = Modifier.fillMaxWidth())
+        // Country selector
+        EnumDropdown("Country", listOf("CA", "US"), selectedCountry) {
+            selectedCountry = it
+        }
+
+        // City input + dropdown
+        OutlinedTextField(
+            value = cityQuery,
+            onValueChange = { cityQuery = it },
+            label = { Text("City") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Show predictions
+        cityPredictions.forEach { prediction ->
+            DropdownMenuItem(
+                text = { Text(prediction) },
+                onClick = {
+                    cityQuery = prediction
+                    cityPredictions = listOf()
+                    onLocationChange("$prediction, $selectedCountry") // pass combined location back
+                }
+            )
+        }
 
         EnumDropdown("Time Preference", TimePreference.values().map { it.name }, timePreference.name) {
-            onTimePrefChange(TimePreference.valueOf(    it))
+            onTimePrefChange(TimePreference.valueOf(it))
         }
         EnumDropdown("Experience Level", ExperienceLevel.values().map { it.name }, experienceLevel.name) {
             onExperienceLevelChange(ExperienceLevel.valueOf(it))
@@ -281,6 +329,7 @@ fun ProfileSetupScreenContent(
         }
     }
 }
+
 
 
 
@@ -322,5 +371,3 @@ fun EnumDropdown(
         }
     }
 }
-
-
