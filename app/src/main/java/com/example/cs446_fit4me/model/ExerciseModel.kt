@@ -2,13 +2,16 @@
 package com.example.cs446_fit4me.model
 
 data class Exercise(
+    val id: String,
     val name: String,
     val muscleGroup: MuscleGroup,
     val equipment: Equipment,
     val bodyPart: BodyPart,
     val description: String,
     val isGeneric: Boolean,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val userId: String? = null,
+    val createdAt: String = ""
 )
 
 enum class MuscleGroup { SHOULDERS, BICEPS, HAMSTRINGS, CALVES, GLUTES, LATS, CHEST, QUADS, ABS, TRICEPS, OTHER }
@@ -36,6 +39,7 @@ fun String.toBodyPartOrNull() = try { BodyPart.valueOf(this.uppercase()) } catch
 // if we want to convert, just keeping for now we can remove later
 fun ExerciseTemplate.toExercise(): Exercise {
     return Exercise(
+        id = this.id,
         name = name,
         muscleGroup = muscleGroup.toMuscleGroupOrNull() ?: MuscleGroup.OTHER, // fallback
         equipment = equipment.toEquipmentOrNull() ?: Equipment.NONE,

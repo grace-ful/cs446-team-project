@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.Exercise
@@ -33,15 +35,26 @@ import com.example.cs446_fit4me.model.ExerciseTemplate
 import com.example.cs446_fit4me.model.MuscleGroup
 import com.example.cs446_fit4me.model.toExercise
 import com.example.cs446_fit4me.network.ApiClient
-import com.example.cs446_fit4me.network.ExerciseApiService
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
 import kotlinx.coroutines.launch
-
+import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.cs446_fit4me.datastore.UserPreferencesManager
+import android.util.Log
+import androidx.compose.material3.HorizontalDivider
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.cs446_fit4me.datastore.dataStore
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExercisesScreen(navController: NavController? = null) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
+
     var searchText by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
 
@@ -55,13 +68,23 @@ fun ExercisesScreen(navController: NavController? = null) {
     var allExercises by remember { mutableStateOf<List<Exercise>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var userExercisesLoaded by remember { mutableStateOf(false) }
+
 
     var filterButtonSize by remember { mutableStateOf(IntSize.Zero) }
 
+    var myExercises by remember { mutableStateOf(listOf<Exercise>()) }
+
+    var editingExercise by remember { mutableStateOf<Exercise?>(null) }
+
 
     LaunchedEffect(Unit) {
-        try {
-            val response = ApiClient.exerciseApiService.getGeneralExercises()
+        val token = context.dataStore.data
+            .map { it[stringPreferencesKey("jwt_token")] ?: "No token found" }
+            .first()
+        Log.d("JWT_DEBUG", "Token before fetching exercises: $token")
+        try{
+            val response = ApiClient.getExerciseApi(context).getGeneralExercises()
             println(response)
             allExercises = response.map { exerciseTemplate ->
                 exerciseTemplate.toExercise()
@@ -69,11 +92,29 @@ fun ExercisesScreen(navController: NavController? = null) {
             }
             println(allExercises)
             isLoading = false
-        } catch (e: Exception) {
+            userExercisesLoaded = false
+        } catch (_: Exception) {
             errorMessage = "Failed to load exercises"
             isLoading = false
         }
     }
+
+    // Fetch user exercises when "My Exercises" tab is selected
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex == 1 && !userExercisesLoaded) {
+            try {
+                val response = ApiClient.getExerciseApi(context).getUserExercises()
+                println(response)
+                myExercises = response.map { it.toExercise() }
+                println(myExercises)
+                userExercisesLoaded = true
+            } catch (e: Exception) {
+                println("Failed to load user exercises: ${e.message}")
+            }
+        }
+    }
+
+
 
 
     val mockExercises = allExercises.sortedBy { it.name }
@@ -81,7 +122,6 @@ fun ExercisesScreen(navController: NavController? = null) {
     // Pick base list depending on selected tab
 
     var showCreateModal by remember { mutableStateOf(false) }
-    var myExercises by remember { mutableStateOf(listOf<Exercise>()) }
 
     val baseExercises = if (selectedTabIndex == 0) mockExercises else myExercises
 
@@ -262,21 +302,37 @@ fun ExercisesScreen(navController: NavController? = null) {
 
             ExercisesList(
                 exercises = filteredExercises,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onEditClick = { editingExercise = it },
+                onDeleteClick = { toDelete ->
+                    myExercises = myExercises.filter { it.id != toDelete.id }
+                },
+                isEditable = selectedTabIndex == 1
             )
         }
 
-        if (showCreateModal) {
+        if (showCreateModal || editingExercise != null) {
             CreateExerciseModal(
                 bodyParts = BodyPart.values().toList(),
                 equipmentList = Equipment.values().toList(),
-                onDismiss = { showCreateModal = false },
+                initialExercise = editingExercise,
+                onDismiss = {
+                    showCreateModal = false
+                    editingExercise = null
+                },
                 onExerciseCreated = { created ->
                     myExercises = myExercises + created
+                    selectedTabIndex = 1
+                },
+                onExerciseUpdated = { updated ->
+                    myExercises = myExercises.map {
+                        if (it.id == updated.id) updated else it
+                    }
                     selectedTabIndex = 1
                 }
             )
         }
+
     }
 }
 
@@ -285,13 +341,22 @@ fun ExercisesScreen(navController: NavController? = null) {
 fun CreateExerciseModal(
     bodyParts: List<BodyPart>,
     equipmentList: List<Equipment>,
+    initialExercise: Exercise? = null,
     onDismiss: () -> Unit,
-    onExerciseCreated: (Exercise) -> Unit
+    onExerciseCreated: (Exercise) -> Unit,
+    onExerciseUpdated: (Exercise) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var selectedBodyPart by remember { mutableStateOf<BodyPart?>(null) }
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
+
+    var name by remember { mutableStateOf(initialExercise?.name ?: "") }
+    //var name by remember { mutableStateOf("") }
+    var selectedBodyPart by remember { mutableStateOf(initialExercise?.bodyPart) }
+    //var selectedBodyPart by remember { mutableStateOf<BodyPart?>(null) }
     var equipmentDropdownExpanded by remember { mutableStateOf(false) }
-    var selectedEquipment by remember { mutableStateOf<Equipment?>(null) }
+    var selectedEquipment by remember { mutableStateOf(initialExercise?.equipment) }
+    //var selectedEquipment by remember { mutableStateOf<Equipment?>(null) }
     var isSaving by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
@@ -361,7 +426,11 @@ fun CreateExerciseModal(
                 Text("Equipment", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
 
-                Box {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { equipmentDropdownExpanded = !equipmentDropdownExpanded }
+                ) {
                     OutlinedTextField(
                         value = selectedEquipment?.name?.replaceFirstChar { it.uppercase() } ?: "",
                         onValueChange = {},
@@ -370,13 +439,16 @@ fun CreateExerciseModal(
                         trailingIcon = {
                             Icon(
                                 imageVector = if (equipmentDropdownExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                                contentDescription = "Toggle Dropdown",
-                                Modifier.clickable {
-                                    equipmentDropdownExpanded = !equipmentDropdownExpanded
-                                }
+                                contentDescription = "Toggle Dropdown"
                             )
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = false
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(color = Color.Transparent)
                     )
                     DropdownMenu(
                         expanded = equipmentDropdownExpanded,
@@ -404,23 +476,34 @@ fun CreateExerciseModal(
                         scope.launch {
                             isSaving = true
                             try {
-                                println(name)
-                                println(MuscleGroup.CHEST)
-                                println(selectedBodyPart)
-                                println(selectedEquipment)
-                                val req = CreateExerciseRequest(
-                                    name = name,
-                                    muscleGroup = MuscleGroup.OTHER,
-                                    bodyPart = selectedBodyPart!!,
-                                    equipment = selectedEquipment!!,
-                                    isGeneral = false,
-                                    userId =  "621b6f5d-aa5d-422b-bd15-87f23724396c"
-                                )
-                                val created = ApiClient.exerciseApiService.createExercise(req)
-                                println(created)
-                                onExerciseCreated(created.toExercise())
+                                if (initialExercise != null) {
+                                    val updatedTemplate = ExerciseTemplate(
+                                        id = initialExercise.id,
+                                        name = name,
+                                        muscleGroup = MuscleGroup.OTHER.name,
+                                        bodyPart = selectedBodyPart!!.name,
+                                        equipment = selectedEquipment!!.name,
+                                        isGeneral = false,
+                                        imageURL = initialExercise.imageUrl,
+                                        createdAt = initialExercise.createdAt,
+                                        userId = initialExercise.userId
+                                    )
+                                    val updated = ApiClient.getExerciseApi(context).updateExercise(initialExercise.id, updatedTemplate)
+                                    onExerciseUpdated(updated.toExercise());
+                                } else {
+                                    val req = CreateExerciseRequest(
+                                        name = name,
+                                        muscleGroup = MuscleGroup.OTHER,
+                                        bodyPart = selectedBodyPart!!,
+                                        equipment = selectedEquipment!!,
+                                        isGeneral = false,
+                                        userId = "621b6f5d-aa5d-422b-bd15-87f23724396c"
+                                    )
+                                    val created = ApiClient.getExerciseApi(context).createExercise(req)
+                                    onExerciseCreated(created.toExercise())
+                                }
                             } catch (e: Exception) {
-                                println("Error creating exercise: ${e.message}")
+                                println("Error saving exercise: ${e.message}")
                             } finally {
                                 isSaving = false
                                 onDismiss()
@@ -430,8 +513,15 @@ fun CreateExerciseModal(
                     enabled = !isSaving && selectedBodyPart != null && selectedEquipment != null && name.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (isSaving) "Saving..." else "Save")
+                    Text(
+                        when {
+                            isSaving -> "Saving..."
+                            initialExercise != null -> "Update"
+                            else -> "Create"
+                        }
+                    )
                 }
+
             }
         }
     }
@@ -439,15 +529,23 @@ fun CreateExerciseModal(
 
 
 @Composable
-fun ExercisesList(exercises: List<Exercise>, modifier: Modifier = Modifier) {
+fun ExercisesList(exercises: List<Exercise>,
+                  modifier: Modifier = Modifier,
+                  onEditClick: (Exercise) -> Unit = {},
+                  onDeleteClick: (Exercise) -> Unit = {},
+                  isEditable: Boolean = false) {
     LazyColumn(modifier = modifier) {
         itemsIndexed(exercises) { index, exercise ->
-            ExerciseListItem(exercise = exercise)
+            ExerciseListItem(
+                exercise = exercise,
+                onEditClick = if (isEditable && !exercise.isGeneric) { { onEditClick(exercise) } } else null,
+                onDeleteClick = if (isEditable && !exercise.isGeneric) { { onDeleteClick(exercise) } } else null
+            )
             if (index < exercises.size - 1) {
-                Divider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     thickness = 1.dp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 )
             }
         }
