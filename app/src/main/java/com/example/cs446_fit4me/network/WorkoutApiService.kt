@@ -16,7 +16,7 @@ interface WorkoutApiService {
     ): WorkoutTemplateResponse
 
     @GET("workout-template/by-user/{userId}")
-    suspend fun getUserWorkouts(@Path("userId") userId: String): List<WorkoutTemplateResponse>
+    suspend fun getUserWorkouts(): List<WorkoutTemplateResponse>
 
 
     // PUT /workout-template/{id}/add-exercises

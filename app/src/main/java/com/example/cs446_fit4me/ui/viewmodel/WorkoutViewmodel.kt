@@ -1,6 +1,7 @@
 package com.example.cs446_fit4me.ui.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,11 +12,68 @@ import java.util.*
 
 class WorkoutViewModel : ViewModel() {
 
+    val allExercises = mutableStateListOf<ExerciseTemplate>()
+
+    private var hasFetchedExercises = false
+
+    fun fetchAllExerciseTemplates(context: Context) {
+        if (hasFetchedExercises) return
+
+        viewModelScope.launch {
+            try {
+                val general = ApiClient.getExerciseApi(context).getGeneralExercises()
+                val user = ApiClient.getExerciseApi(context).getUserExercises()
+                allExercises.clear()
+                allExercises.addAll(general + user)
+                hasFetchedExercises = true
+                Log.d("WorkoutViewModel", "Fetched ${allExercises.size} exercises.")
+            } catch (e: Exception) {
+                Log.e("WorkoutViewModel", "Error fetching exercises", e)
+            }
+        }
+    }
+
+    fun createWorkoutTemplateOnServer(
+        context: Context,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val api = ApiClient.getWorkoutApi(context)
+
+                val response = api.createWorkoutTemplate(
+                    CreateWorkoutTemplateRequest(
+                        name = workoutName,
+                        exerciseIds = selectedExercises.map { it.id }
+                    )
+                )
+                Log.d("WorkoutViewModel", "Created workout: $response")
+                clearSelectedExercises()
+                updateWorkoutName("")
+                onSuccess()
+
+            } catch (e: Exception) {
+                onError("Error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+
+    var workoutName by mutableStateOf("")
+        private set
+
+    fun updateWorkoutName(newName: String) {
+        workoutName = newName
+    }
+
     private val _myWorkouts = mutableStateListOf<WorkoutModel>()
     val myWorkouts: List<WorkoutModel> get() = _myWorkouts
 
     private val _standardWorkouts = mutableStateListOf<WorkoutModel>()
     val standardWorkouts: List<WorkoutModel> get() = _standardWorkouts
+
+    val selectedExercises = mutableStateListOf<ExerciseTemplate>()
 
     fun fetchStandardWorkouts(context: Context) {
         viewModelScope.launch {
@@ -29,10 +87,11 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-    fun fetchUserWorkouts(userId: String, context: Context) {
+    fun fetchUserWorkouts(context: Context) {
         viewModelScope.launch {
             try {
-                val response = ApiClient.getWorkoutApi(context).getUserWorkouts(userId)
+                val response = ApiClient.getWorkoutApi(context).getUserWorkouts();
+                Log.d("WorkoutViewModel", "Received ${response.size} user workouts from backend.")
                 _myWorkouts.clear()
                 _myWorkouts.addAll(response.map { it.toWorkoutModel() })
             } catch (e: Exception) {
@@ -90,4 +149,19 @@ class WorkoutViewModel : ViewModel() {
             )
         )
     }
+
+    fun addExercise(exercise: ExerciseTemplate) {
+        if (selectedExercises.none { it.id == exercise.id }) {
+            selectedExercises.add(exercise)
+        }
+    }
+
+    fun removeExercise(id: String) {
+        selectedExercises.removeIf { it.id == id }
+    }
+
+    fun clearSelectedExercises() {
+        selectedExercises.clear()
+    }
+
 }

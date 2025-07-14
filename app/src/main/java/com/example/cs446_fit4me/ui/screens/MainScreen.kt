@@ -4,16 +4,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
 import com.example.cs446_fit4me.network.ApiClient
@@ -21,8 +24,9 @@ import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.SettingsNavGraph
 import com.example.cs446_fit4me.model.*
-
-
+import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
+import com.example.cs446_fit4me.ui.workout.CreateWorkoutScreen
+import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
 
 
 // Main screen that contains the bottom navigation bar and the navigation host
@@ -31,6 +35,7 @@ fun MainScreen() {
     var userName by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+
 
     LaunchedEffect(Unit) {
         try {
@@ -81,7 +86,9 @@ fun MainScreen() {
         bottomBar = {
             BottomNavigationBar(navController = navController, items = bottomNavItems)
         }
+
     ) { innerPadding ->
+        val workoutViewModel: WorkoutViewModel = viewModel()
         NavHost(
             navController = navController,
             startDestination = BottomNavItem.Home.route,
@@ -93,13 +100,40 @@ fun MainScreen() {
                 MatchingScreen(matches = getMatchesForPreview()) // Replace with your real data source later!
             }
 
-            composable(BottomNavItem.Workout.route) { WorkoutScreen() }
+            composable(BottomNavItem.Workout.route) { WorkoutScreen(navController) }
             composable(BottomNavItem.Profile.route) { ProfileScreen() }
 
             composable("settings") {
                 SettingsMainScreen(navController)
             }
             composable("exercises") { ExercisesScreen(navController) }
+
+
+            composable("create_workout") {
+                CreateWorkoutScreen(
+                    navController = navController,
+                    workoutViewModel = workoutViewModel,
+                    onAddExerciseClicked = { navController.navigate("select_exercise") },
+                    onCreateWorkout = { name ->
+                        // TODO: handle workout creation
+                    }
+                )
+            }
+
+            composable("select_exercise") {
+                val context = LocalContext.current
+
+                LaunchedEffect(Unit) {
+                    workoutViewModel.fetchAllExerciseTemplates(context)
+                }
+
+                SelectExerciseScreen(
+                    navController = navController,
+                    initiallySelected = workoutViewModel.selectedExercises,
+                    onExerciseSelected = { workoutViewModel.addExercise(it) },
+                    exercises = workoutViewModel.allExercises
+                )
+            }
         }
     }
 }

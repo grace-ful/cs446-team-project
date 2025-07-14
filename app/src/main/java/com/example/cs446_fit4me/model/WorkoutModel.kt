@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.model
 
+import androidx.compose.runtime.mutableStateListOf
 import java.util.UUID
 
 data class WorkoutModel(
@@ -17,3 +18,9 @@ fun WorkoutTemplateResponse.toWorkoutModel(): WorkoutModel {
         exercises = this.exercises
     )
 }
+
+data class CreateWorkoutTemplateRequest(
+    val name: String,
+    val exerciseIds: List<String>,
+    val isGeneral: Boolean = false,
+)
