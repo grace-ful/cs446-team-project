@@ -3,6 +3,7 @@ import prisma from "../lib/prisma";
 import { AuthRequest } from "src/lib/types";
 import authMiddleware from "../middleware/authMiddleware";
 import { calculateMatchScore } from "../utils/calculateMatchScore";
+import adminMiddleware from "../middleware/adminMiddleware";
 
 const matchesRouter = Router();
 
@@ -82,7 +83,7 @@ matchesRouter.get('/by-user/:userId', authMiddleware, async (req: AuthRequest, r
   }
 });
 
-matchesRouter.post('/refresh-all', authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+matchesRouter.post('/refresh-all', adminMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
     try {
     // 1. Get all users
     const allUsers = await prisma.user.findMany();
