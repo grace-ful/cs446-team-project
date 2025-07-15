@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.network
 
+import WorkoutSessionApiService
 import android.content.Context
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -45,5 +46,9 @@ object ApiClient {
 
     fun getMatchingApi(context: Context): MatchingApiService {
         return createRetrofit(context).create(MatchingApiService::class.java)
+    }
+
+    fun getWorkoutSessionApi(context: Context): WorkoutSessionApiService {
+        return createRetrofit(context).create(WorkoutSessionApiService::class.java)
     }
 }

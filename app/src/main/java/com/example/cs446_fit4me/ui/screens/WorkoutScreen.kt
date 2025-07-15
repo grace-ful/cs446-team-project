@@ -96,8 +96,19 @@ fun WorkoutScreen(
                     onMyWorkoutLongPress = { selectedMyWorkoutName = it; selectedStandardWorkoutName = null },
                     onStandardWorkoutLongPress = { selectedStandardWorkoutName = it; selectedMyWorkoutName = null },
                     onMyWorkoutDeselect = { selectedMyWorkoutName = null },
-                    onStandardWorkoutDeselect = { selectedStandardWorkoutName = null }
+                    onStandardWorkoutDeselect = { selectedStandardWorkoutName = null },
+                    onStartWorkoutClicked = { templateId ->
+                        workoutViewModel.startWorkoutSessionFromTemplate(
+                            context = context,
+                            templateId = templateId,
+                            onSuccess = { sessionId ->
+                                navController.navigate("workout_session/$sessionId")
+                            },
+                            onError = { error -> println("Failed to start session: $error") }
+                        )
+                    }
                 )
+
             }
         }
     }
@@ -144,12 +155,14 @@ fun CombinedWorkoutSection(
     onMyWorkoutLongPress: (String) -> Unit = {},
     onStandardWorkoutLongPress: (String) -> Unit = {},
     onMyWorkoutDeselect: () -> Unit = {},
-    onStandardWorkoutDeselect: () -> Unit = {}
+    onStandardWorkoutDeselect: () -> Unit = {},
+    onStartWorkoutClicked: (String) -> Unit = {} // ⬅️ add callback for launching sessions
 ) {
-    // My Exercises Section
+    val context = LocalContext.current
+
+    // --- My Workouts ---
     val myLabel = if (myWorkouts.size <= 1) "My Workout (${myWorkouts.size})" else "My Workouts (${myWorkouts.size})"
     Text(myLabel, style = MaterialTheme.typography.titleMedium)
-
     Spacer(modifier = Modifier.height(8.dp))
 
     if (myWorkouts.isEmpty()) {
@@ -159,7 +172,6 @@ fun CombinedWorkoutSection(
             modifier = Modifier.padding(vertical = 16.dp)
         )
     } else {
-        // Display my workouts in a grid layout
         myWorkouts.chunked(2).forEach { rowWorkouts ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -171,13 +183,15 @@ fun CombinedWorkoutSection(
                         title = workout.name,
                         exercises = workout.exercises.joinToString(", ") { it.name },
                         isSelected = isSelected,
+                        onClick = {
+                            if (!isSelected) onStartWorkoutClicked(workout.id)
+                        },
                         onLongPress = {
                             if (isSelected) onMyWorkoutDeselect() else onMyWorkoutLongPress(workout.name)
                         },
                         modifier = Modifier.weight(1f)
                     )
                 }
-                // Fill remaining space if odd number of items
                 if (rowWorkouts.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -188,10 +202,9 @@ fun CombinedWorkoutSection(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    // Standard Exercises Section
-    val standardLabel = "Standard Workouts (${standardWorkouts.size})" //if (standardWorkouts.size <= 1) "Standard Workout (1)" else "Standard Workouts (${standardWorkouts.size})"
+    // --- Standard Workouts ---
+    val standardLabel = "Standard Workouts (${standardWorkouts.size})"
     Text(standardLabel, style = MaterialTheme.typography.titleMedium)
-
     Spacer(modifier = Modifier.height(8.dp))
 
     if (standardWorkouts.isEmpty()) {
@@ -201,7 +214,6 @@ fun CombinedWorkoutSection(
             modifier = Modifier.padding(vertical = 16.dp)
         )
     } else {
-        // Display standard workouts in a grid layout
         standardWorkouts.chunked(2).forEach { rowWorkouts ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -213,13 +225,15 @@ fun CombinedWorkoutSection(
                         title = workout.name,
                         exercises = workout.exercises.joinToString(", ") { it.name },
                         isSelected = isSelected,
+                        onClick = {
+                            if (!isSelected) onStartWorkoutClicked(workout.id)
+                        },
                         onLongPress = {
                             if (isSelected) onStandardWorkoutDeselect() else onStandardWorkoutLongPress(workout.name)
                         },
                         modifier = Modifier.weight(1f)
                     )
                 }
-                // Fill remaining space if odd number of items
                 if (rowWorkouts.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -229,6 +243,7 @@ fun CombinedWorkoutSection(
     }
 }
 
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WorkoutCard(
@@ -236,6 +251,7 @@ fun WorkoutCard(
     exercises: String,
     timeAgo: String? = null,
     isSelected: Boolean = false,
+    onClick: () -> Unit = {},
     onLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -248,25 +264,37 @@ fun WorkoutCard(
             .border(2.dp, borderColor, RoundedCornerShape(12.dp))
             .padding(vertical = 6.dp)
             .combinedClickable(
-                onClick = {},
+                onClick = onClick,
                 onLongClick = onLongPress
             )
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                exercises,
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = exercises,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+
             timeAgo?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(it, style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
         }

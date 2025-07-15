@@ -27,9 +27,11 @@ import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.viewmodel.MatchingViewModel
+import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.ui.workout.CreateWorkoutScreen
 import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
+import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
 
 
 // Main screen that contains the bottom navigation bar and the navigation host
@@ -160,6 +162,16 @@ fun MainScreen() {
                 }
             }
 
+            composable("workout_session/{sessionId}") { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+                val viewModel = remember { WorkoutSessionViewModel() }
+
+                WorkoutSessionScreen(
+                    sessionId = sessionId,
+                    navController = navController,
+                    viewModel = viewModel
+                )
+            }
         }
     }
 }

@@ -168,4 +168,21 @@ class WorkoutViewModel : ViewModel() {
         selectedExercises.clear()
     }
 
+    fun startWorkoutSessionFromTemplate(
+        context: Context,
+        templateId: String,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                print("Starting workout session from template: $templateId");
+                val response = ApiClient.getWorkoutSessionApi(context)
+                    .startWorkoutSessionFromTemplate(templateId)
+                onSuccess(response.workoutSessionId)
+            } catch (e: Exception) {
+                onError(e.message ?: "Unknown error")
+            }
+        }
+    }
 }
