@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
+import authMiddleware from "../middleware/authMiddleware";
+import { AuthRequest } from "../lib/types";
 
 const workoutSessionRouter = Router();
 
@@ -109,6 +111,59 @@ workoutSessionRouter.delete("/:id", async (req: Request, res: Response) => {
 		res.status(204).send();
 	} catch (err: any) {
 		res.status(400).json({ error: "Failed to delete WorkoutSession." });
+	}
+});
+
+workoutSessionRouter.post("/from-template/:templateId", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+	const templateId = req.params.templateId;
+	const userId = req.userId;
+
+	try {
+		// 1. Fetch workout template with exercises
+		const template = await prisma.workoutTemplate.findUnique({
+			where: { id: templateId },
+			include: {
+				exercises: true,
+			},
+		});
+
+		if (!template){
+			res.status(404).json({ error: "Workout template not found." });
+			return;
+		}
+
+		// 2. Create WorkoutSession
+		if (!userId) {
+			res.status(400).json({ error: "User ID is required." });
+			return;
+		}
+		const workoutSession = await prisma.workoutSession.create({
+			data: {
+				userId,
+				workoutTemplateId: templateId
+			}
+		});
+		
+		// 3. Create Exercise Sessions
+		const exerciseSessionCreates = template.exercises.map(exercise => {
+			return prisma.exerciseSession.create({
+				data: {
+					userId,
+					exerciseTemplateID: exercise.id,
+					workoutSessionId: workoutSession.id,
+					sets: {
+						create: []
+					},
+				},
+			})
+		});
+
+		await Promise.all(exerciseSessionCreates);
+
+		// Return the workout session ID so that the frontend can navigate to it
+		return res.status(201).json({ workoutSessionId: workoutSession.id });
+	} catch (err: any) {
+		res.status(400).json({ error: err.message });
 	}
 });
 

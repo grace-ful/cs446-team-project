@@ -180,7 +180,7 @@ model ExerciseSession {
   user   User   @relation(fields: [userId], references: [id])
   userId String
 
-  date  DateTime
+  date  DateTime @default(now())
   notes String?
 
   sets ExerciseSet[]
