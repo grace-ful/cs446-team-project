@@ -87,22 +87,59 @@ workoutSessionRouter.get("/by-user/:userId", async (req: Request, res: Response)
 
 // Update session (notes/date)
 workoutSessionRouter.put("/:id", async (req: Request, res: Response) => {
-	const { notes, workoutDate } = req.body;
+	const { notes, workoutDate, exerciseSessions } = req.body;
 
 	try {
-		const updated = await prisma.workoutSession.update({
-			where: { id: req.params.id },
+		const sessionId = req.params.id;
+
+		// Step 1: Update basic workout session fields
+		await prisma.workoutSession.update({
+			where: { id: sessionId },
 			data: {
 				notes,
 				workoutDate: workoutDate ? new Date(workoutDate) : undefined,
 			},
 		});
 
-		res.status(200).json(updated);
+		// Step 2: Loop over each exercise session
+		for (const session of exerciseSessions) {
+			const exerciseSessionId = session.id;
+
+			for (const set of session.sets) {
+				if (set.id) {
+					// Update existing set
+					await prisma.exerciseSet.update({
+						where: { id: set.id },
+						data: {
+							reps: set.reps,
+							weight: set.weight,
+							duration: set.duration,
+							// Optional: isCompleted if you store it in DB
+						},
+					});
+				} else {
+					// Create new set
+					await prisma.exerciseSet.create({
+						data: {
+							reps: set.reps,
+							weight: set.weight,
+							duration: set.duration,
+							ExerciseSession: {
+								connect: { id: exerciseSessionId },
+							},
+						},
+					});
+				}
+			}
+		}
+
+		res.status(200).json({ success: true });
 	} catch (err: any) {
+		console.error(err);
 		res.status(400).json({ error: "Failed to update WorkoutSession." });
 	}
 });
+
 
 // Delete session
 workoutSessionRouter.delete("/:id", async (req: Request, res: Response) => {
