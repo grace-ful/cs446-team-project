@@ -6,8 +6,21 @@ async function seedWorkoutTemplates() {
 
   const DEFAULT_USER_ID = "621b6f5d-aa5d-422b-bd15-87f23724396c";
 
-  await prisma.workoutSession.deleteMany({});
-  await prisma.workoutTemplate.deleteMany({});
+  // Step 1: Delete all ExerciseSets
+    const deletedSets = await prisma.exerciseSet.deleteMany({});
+    console.log(`🗑️ Deleted ${deletedSets.count} exercise sets.`);
+
+    // Step 2: Delete all ExerciseSessions
+    const deletedExerciseSessions = await prisma.exerciseSession.deleteMany({});
+    console.log(`🗑️ Deleted ${deletedExerciseSessions.count} exercise sessions.`);
+
+    // Step 3: Delete all WorkoutSessions
+    const deletedWorkoutSessions = await prisma.workoutSession.deleteMany({});
+    console.log(`🗑️ Deleted ${deletedWorkoutSessions.count} workout sessions.`);
+
+    // Step 4: Delete all WorkoutTemplates
+    const deletedWorkoutTemplates = await prisma.workoutTemplate.deleteMany({});
+    console.log(`🗑️ Deleted ${deletedWorkoutTemplates.count} workout templates.`);
   console.log("🧹 Cleared all existing workout templates.");
 
   const templates = [];
@@ -38,31 +51,6 @@ async function seedWorkoutTemplates() {
     });
 
     templates.push(template);
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    const customExercises = await prisma.exerciseTemplate.findMany({
-      take: 5,
-    });
-
-    if (customExercises.length === 0) {
-      console.log("⚠️ No exercises found for custom user workout");
-      continue;
-    }
-
-    const customTemplate = await prisma.workoutTemplate.create({
-      data: {
-        name: `Custom Workout ${i}`,
-        isGeneral: false,
-        userId: DEFAULT_USER_ID,
-        exercises: {
-          connect: customExercises.map((e) => ({ id: e.id })),
-        },
-      },
-      include: { exercises: true },
-    });
-
-    templates.push(customTemplate);
   }
 
   console.log(JSON.stringify(templates, null, 2));
