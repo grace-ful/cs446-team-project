@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const ADMIN_TOKEN = process.env.ADMIN_SECRET!;
-// const API_URL = "https://cs446-team-project-production.up.railway.app/api/matches/refresh-all";
-const API_URL = "http://localhost:3000/api/matches/refresh-all";
+const API_URL = "https://cs446-team-project-production.up.railway.app/api/matches/refresh-all";
+// const API_URL = "http://localhost:3000/api/matches/refresh-all";
 
 async function refreshAllMatches() {
   try {
