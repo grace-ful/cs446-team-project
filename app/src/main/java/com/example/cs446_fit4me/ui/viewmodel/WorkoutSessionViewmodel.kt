@@ -26,26 +26,14 @@ class WorkoutSessionViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val response = apiService?.getWorkoutSession(sessionId)
-                Log.d("WorkoutSessionVM", "Fetched session: $response")
-                Log.d("WorkoutSessionVM", "Response type: ${response?.javaClass?.simpleName}")
-
                 if (response != null) {
-                    // Check if response is actually a WorkoutSessionResponse
-                    when (response) {
-                        is WorkoutSessionResponse -> {
-                            _uiState.value = response.toWorkoutSessionUI()
-                        }
-                        else -> {
-                            Log.e("WorkoutSessionVM", "Unexpected response type: ${response.javaClass}")
-                            // Handle other response types or cast as needed
-                        }
-                    }
+                    _uiState.value = response.toWorkoutSessionUI()
+                    Log.d("WorkoutSessionVM", "Fetched session: ${_uiState.value}")
                 } else {
-                    Log.e("WorkoutSessionVM", "API returned null")
+                    Log.e("WorkoutSessionVM", "Response was null")
                 }
             } catch (e: Exception) {
                 Log.e("WorkoutSessionVM", "Failed to fetch session: ${e.message}")
-                e.printStackTrace()
             }
         }
     }
@@ -96,7 +84,9 @@ class WorkoutSessionViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(
             exerciseSessions = _uiState.value.exerciseSessions.map { exercise ->
                 if (exercise.id == exerciseId) {
-                    exercise.copy(sets = exercise.sets + ExerciseSetUI())
+                    exercise.copy(
+                        sets = exercise.sets + ExerciseSetUI() // new blank set
+                    )
                 } else exercise
             }
         )
@@ -105,10 +95,23 @@ class WorkoutSessionViewModel : ViewModel() {
     fun saveWorkoutSession(onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                apiService?.saveWorkoutSession(_uiState.value.id, _uiState.value)
+                val request = _uiState.value.toUpdateRequest()
+                apiService?.updateWorkoutSession(_uiState.value.id, request)
                 onSuccess()
             } catch (e: Exception) {
                 Log.e("WorkoutSessionVM", "Failed to save session: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteWorkoutSession(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                apiService?.deleteWorkoutSession(uiState.value.id)
+                Log.d("WorkoutSessionVM", "Deleted session: ${uiState.value.id}")
+                onSuccess()
+            } catch (e: Exception) {
+                Log.e("WorkoutSessionVM", "Failed to delete session: ${e.message}")
             }
         }
     }
