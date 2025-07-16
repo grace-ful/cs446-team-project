@@ -25,23 +25,32 @@ import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
 import com.example.cs446_fit4me.network.ApiClient
-import kotlinx.coroutines.launch
 
 @Composable
 fun SelectExerciseScreen(
     navController: NavController,
-    initiallySelected: List<ExerciseTemplate>,
-    onExerciseSelected: (ExerciseTemplate) -> Unit,
     exercises: List<ExerciseTemplate>,
+//    onExerciseSelected: (ExerciseTemplate) -> Unit, // Probably not using it
 ) {
+    // CHANGED: Get selected exercises from previous back stack entry
+    val initiallySelected = remember {
+        navController.previousBackStackEntry
+            ?.savedStateHandle
+            ?.get<ArrayList<ExerciseTemplate>>("selectedExercises")
+            ?.toList() ?: emptyList()
+    }
+
     val context = LocalContext.current
     var searchText by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
-    // Selection state
-    val selectedExercises = remember {
-        mutableStateListOf<ExerciseTemplate>().apply { addAll(initiallySelected) }
+    // KEY: Maintain and update the selected exercises
+    val selectedExercises = remember { mutableStateListOf<ExerciseTemplate>() }
+    // CHANGED: Use LaunchedEffect to update whenever initiallySelected changes
+    LaunchedEffect(initiallySelected) {
+        selectedExercises.clear()
+        selectedExercises.addAll(initiallySelected)
     }
 
     // Filter states
@@ -66,7 +75,6 @@ fun SelectExerciseScreen(
                 myExercises = response
                 myExercisesLoaded = true
             } catch (e: Exception) {
-                Log.e("SelectExerciseScreen", "Failed to load my exercises: ${e.message}")
                 errorMessage = "Failed to load your exercises"
             } finally {
                 isLoading = false
@@ -84,14 +92,13 @@ fun SelectExerciseScreen(
                 (selectedEquipments.isEmpty() || Equipment.valueOf(ex.equipment) in selectedEquipments)
     }
 
-    // ---------- UI LAYOUT ----------
-
+    // UI LAYOUT
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(0.dp)
     ) {
-        // SEARCH BAR at the top
+        // SEARCH BAR
         OutlinedTextField(
             value = searchText,
             onValueChange = { searchText = it },
@@ -247,7 +254,9 @@ fun SelectExerciseScreen(
         // ADD EXERCISES BUTTON
         Button(
             onClick = {
-                selectedExercises.forEach { onExerciseSelected(it) }
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("selectedExercises", ArrayList(selectedExercises))
                 navController.popBackStack()
             },
             modifier = Modifier
@@ -259,6 +268,7 @@ fun SelectExerciseScreen(
         }
     }
 }
+
 
 @Composable
 fun FilterButton(

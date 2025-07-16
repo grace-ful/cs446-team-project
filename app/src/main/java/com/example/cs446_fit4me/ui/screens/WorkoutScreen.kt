@@ -1,21 +1,16 @@
-// File: ui/screens/WorkoutScreen.kt
-
 package com.example.cs446_fit4me.ui.screens
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -25,52 +20,76 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.model.*
-import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
+import com.example.cs446_fit4me.ui.components.WorkoutPreviewDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutScreen(
     navController: NavController,
-    workoutViewModel: WorkoutViewModel = viewModel()
+    workoutViewModel: WorkoutViewModel = viewModel(),
+    onEditWorkout: (WorkoutModel) -> Unit // <-- Added parameter
 ) {
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesManager(context) }
     val userId by userPrefs.userIdFlow.collectAsState(initial = null)
 
-
     var standardWorkouts = workoutViewModel.standardWorkouts
     val myWorkouts by remember { derivedStateOf { workoutViewModel.myWorkouts } }
 
-    // ✅ Trigger standard workout fetch through ViewModel
     LaunchedEffect(Unit) {
         workoutViewModel.fetchStandardWorkouts(context)
         workoutViewModel.fetchUserWorkouts(context)
     }
 
-    // ✅ Trigger user workout fetch (replace hardcoded userId when ready)
+    // For preview dialog
+    var previewWorkout by remember { mutableStateOf<WorkoutModel?>(null) }
+    var previewIsCustom by remember { mutableStateOf(false) }
 
-    var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }
-    var selectedStandardWorkoutName by remember { mutableStateOf<String?>(null) }
-    var showConfirmDialog by remember { mutableStateOf(false) }
+    // Handle exercises returned from SelectExercisesScreen
+    val navBackStackEntry = navController.currentBackStackEntry
+    LaunchedEffect(navBackStackEntry?.savedStateHandle?.get<ArrayList<ExerciseTemplate>>("selectedExercises")) {
+        val returnedExercises = navBackStackEntry
+            ?.savedStateHandle
+            ?.get<ArrayList<ExerciseTemplate>>("selectedExercises")
+        if (returnedExercises != null && previewWorkout != null) {
+            previewWorkout = previewWorkout!!.copy(exercises = returnedExercises)
+            navBackStackEntry.savedStateHandle.remove<ArrayList<ExerciseTemplate>>("selectedExercises")
+        }
+    }
 
-    val hasSelection = selectedMyWorkoutName != null || selectedStandardWorkoutName != null
+    // Show preview dialog
+    if (previewWorkout != null) {
+        WorkoutPreviewDialog(
+            workout = previewWorkout!!,
+            isCustom = previewIsCustom,
+            onClose = { previewWorkout = null },
+            onStart = { /* TODO: Start workout logic */ },
+            onDelete = {
+                previewWorkout?.let { w ->
+                    if (previewIsCustom) {
+                        workoutViewModel.deleteWorkout(w.name)
+                    }
+                }
+                previewWorkout = null
+            },
+            onEdit = {
+                val workout = previewWorkout!!
+                previewWorkout = null
+                onEditWorkout(workout) // Use the passed-in lambda
+            }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    if (hasSelection) {
-                        showConfirmDialog = true
-                    } else {
-                        navController.navigate("create_workout")
-                    }
-                },
-                containerColor = if (hasSelection) MaterialTheme.colorScheme.error else Color(0xFF007AFF)
+                onClick = { navController.navigate("create_workout") },
+                containerColor = Color(0xFF007AFF)
             ) {
                 Icon(
-                    imageVector = if (hasSelection) Icons.Default.Delete else Icons.Default.Add,
-                    contentDescription = if (hasSelection) "Delete Workout" else "Add Workout",
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Workout",
                     tint = Color.White
                 )
             }
@@ -91,6 +110,10 @@ fun WorkoutScreen(
                 CombinedWorkoutSection(
                     myWorkouts = myWorkouts,
                     standardWorkouts = standardWorkouts,
+                    onWorkoutClick = { workout ->
+                        previewWorkout = workout
+                        previewIsCustom = !workout.isGeneric
+                    }
                     selectedMyWorkoutName = selectedMyWorkoutName,
                     selectedStandardWorkoutName = selectedStandardWorkoutName,
                     onMyWorkoutLongPress = { selectedMyWorkoutName = it; selectedStandardWorkoutName = null },
@@ -108,41 +131,8 @@ fun WorkoutScreen(
                         )
                     }
                 )
-
             }
         }
-    }
-
-    if (showConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedMyWorkoutName?.let {
-                        workoutViewModel.deleteWorkout(it)
-                        selectedMyWorkoutName = null
-                    }
-                    selectedStandardWorkoutName?.let {
-                        standardWorkouts = standardWorkouts.filterNot { workout -> workout.name == it }
-                        selectedStandardWorkoutName = null
-                    }
-                    showConfirmDialog = false
-                }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    selectedMyWorkoutName = null
-                    selectedStandardWorkoutName = null
-                    showConfirmDialog = false
-                }) {
-                    Text("Cancel")
-                }
-            },
-            title = { Text("Delete Workout?") },
-            text = { Text("Are you sure you want to delete this workout? This cannot be undone.") }
-        )
     }
 }
 
@@ -150,6 +140,9 @@ fun WorkoutScreen(
 fun CombinedWorkoutSection(
     myWorkouts: List<WorkoutModel>,
     standardWorkouts: List<WorkoutModel>,
+    onWorkoutClick: (WorkoutModel) -> Unit
+    // My Workouts
+    val myLabel = if (myWorkouts.size == 1) "My Workout (1)" else "My Workouts (${myWorkouts.size})"
     selectedMyWorkoutName: String? = null,
     selectedStandardWorkoutName: String? = null,
     onMyWorkoutLongPress: (String) -> Unit = {},
@@ -178,17 +171,10 @@ fun CombinedWorkoutSection(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 rowWorkouts.forEach { workout ->
-                    val isSelected = workout.name == selectedMyWorkoutName
                     WorkoutCard(
                         title = workout.name,
                         exercises = workout.exercises.joinToString(", ") { it.name },
-                        isSelected = isSelected,
-                        onClick = {
-                            if (!isSelected) onStartWorkoutClicked(workout.id)
-                        },
-                        onLongPress = {
-                            if (isSelected) onMyWorkoutDeselect() else onMyWorkoutLongPress(workout.name)
-                        },
+                        onClick = { onWorkoutClick(workout) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -201,8 +187,7 @@ fun CombinedWorkoutSection(
     }
 
     Spacer(modifier = Modifier.height(24.dp))
-
-    // --- Standard Workouts ---
+    // Stadard workouts
     val standardLabel = "Standard Workouts (${standardWorkouts.size})"
     Text(standardLabel, style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(8.dp))
@@ -220,17 +205,10 @@ fun CombinedWorkoutSection(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 rowWorkouts.forEach { workout ->
-                    val isSelected = workout.name == selectedStandardWorkoutName
                     WorkoutCard(
                         title = workout.name,
                         exercises = workout.exercises.joinToString(", ") { it.name },
-                        isSelected = isSelected,
-                        onClick = {
-                            if (!isSelected) onStartWorkoutClicked(workout.id)
-                        },
-                        onLongPress = {
-                            if (isSelected) onStandardWorkoutDeselect() else onStandardWorkoutLongPress(workout.name)
-                        },
+                        onClick = { onWorkoutClick(workout) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -243,30 +221,22 @@ fun CombinedWorkoutSection(
     }
 }
 
-
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutCard(
     title: String,
     exercises: String,
     timeAgo: String? = null,
-    isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    onLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = modifier
-            .border(2.dp, borderColor, RoundedCornerShape(12.dp))
+            .border(2.dp, Color.Transparent, RoundedCornerShape(12.dp))
             .padding(vertical = 6.dp)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongPress
-            )
+            .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
