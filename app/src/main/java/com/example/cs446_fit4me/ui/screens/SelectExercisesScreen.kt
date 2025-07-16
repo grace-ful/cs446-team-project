@@ -25,7 +25,6 @@ import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
 import com.example.cs446_fit4me.network.ApiClient
-import kotlinx.coroutines.launch
 
 @Composable
 fun SelectExerciseScreen(
@@ -39,9 +38,11 @@ fun SelectExerciseScreen(
     var selectedTabIndex by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
-    // Selection state
-    val selectedExercises = remember {
-        mutableStateListOf<ExerciseTemplate>().apply { addAll(initiallySelected) }
+    // KEY CHANGE: Reset selection every time this screen opens with new initiallySelected
+    val selectedExercises = remember { mutableStateListOf<ExerciseTemplate>() }
+    LaunchedEffect(initiallySelected) {
+        selectedExercises.clear()
+        selectedExercises.addAll(initiallySelected)
     }
 
     // Filter states
@@ -84,7 +85,7 @@ fun SelectExerciseScreen(
                 (selectedEquipments.isEmpty() || Equipment.valueOf(ex.equipment) in selectedEquipments)
     }
 
-    // ---------- UI LAYOUT ----------
+    // UI LAYOUT
 
     Column(
         modifier = Modifier
@@ -247,7 +248,9 @@ fun SelectExerciseScreen(
         // ADD EXERCISES BUTTON
         Button(
             onClick = {
-                selectedExercises.forEach { onExerciseSelected(it) }
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("selectedExercises", ArrayList(selectedExercises))
                 navController.popBackStack()
             },
             modifier = Modifier

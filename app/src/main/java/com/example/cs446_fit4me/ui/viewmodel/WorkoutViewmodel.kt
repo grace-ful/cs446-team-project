@@ -104,8 +104,6 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-
-
     fun createEmptyWorkout(name: String = "Untitled"): String {
         val id = UUID.randomUUID().toString()
         _myWorkouts.add(
@@ -168,4 +166,18 @@ class WorkoutViewModel : ViewModel() {
         selectedExercises.clear()
     }
 
+    // Update workout function
+    fun updateWorkout(updatedWorkout: WorkoutModel) {
+        val index = _myWorkouts.indexOfFirst { it.id == updatedWorkout.id }
+        if (index != -1) {
+            _myWorkouts[index] = updatedWorkout
+        }
+        // (optional) update standard workouts as well
+        /*
+        val stdIndex = _standardWorkouts.indexOfFirst { it.id == updatedWorkout.id }
+        if (stdIndex != -1) {
+            _standardWorkouts[stdIndex] = updatedWorkout
+        }
+        */
+    }
 }
