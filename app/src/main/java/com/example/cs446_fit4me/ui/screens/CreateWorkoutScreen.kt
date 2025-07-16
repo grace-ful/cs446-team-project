@@ -10,12 +10,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.ExerciseTemplate
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateWorkoutScreen(
     navController: NavController,
@@ -26,36 +29,63 @@ fun CreateWorkoutScreen(
     val workoutName = workoutViewModel.workoutName
     val selectedExercises = workoutViewModel.selectedExercises
 
+    val navBackStackEntry = navController.currentBackStackEntry
+    LaunchedEffect(navBackStackEntry?.savedStateHandle?.get<ArrayList<ExerciseTemplate>>("selectedExercises")) {
+        val returnedExercises = navBackStackEntry
+            ?.savedStateHandle
+            ?.get<ArrayList<ExerciseTemplate>>("selectedExercises")
+        if (returnedExercises != null) {
+            workoutViewModel.clearSelectedExercises()
+            returnedExercises.forEach { workoutViewModel.addExercise(it) }
+            navBackStackEntry.savedStateHandle.remove<ArrayList<ExerciseTemplate>>("selectedExercises")
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
         Text("Create New Workout", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        OutlinedTextField(
-            value = workoutName,
-            onValueChange = { workoutViewModel.updateWorkoutName(it) },
-            label = { Text("Workout Name") },
-            placeholder = { Text("Enter a workout name...") },
+        // Workout name inside an elevated card
+        ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            singleLine = true,
-            shape = MaterialTheme.shapes.small
-        )
+                .padding(bottom = 10.dp),
+            shape = RoundedCornerShape(18.dp),
+            elevation = CardDefaults.cardElevation(3.dp)
+        ) {
+            OutlinedTextField(
+                value = workoutName,
+                onValueChange = { workoutViewModel.updateWorkoutName(it) },
+                label = { Text("Workout Name") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                singleLine = true,
+                textStyle = LocalTextStyle.current.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = MaterialTheme.typography.titleMedium.fontSize
+                )
+            )
+        }
 
         // Add Exercise Button
         Button(
             onClick = onAddExerciseClicked,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(50)
         ) {
             Text("Add Exercise")
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Exercises in this workout:", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(18.dp))
+        Text(
+            "Exercises in this workout:",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+        )
         Spacer(modifier = Modifier.height(4.dp))
 
         // Cards for each selected exercise
@@ -70,18 +100,21 @@ fun CreateWorkoutScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                contentPadding = PaddingValues(vertical = 4.dp)
+                contentPadding = PaddingValues(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(selectedExercises) { exerciseTemplate ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        shape = MaterialTheme.shapes.large,
-                        elevation = CardDefaults.cardElevation(2.dp)
+                            .heightIn(min = 52.dp, max = 78.dp), // Slightly smaller card
+                        shape = RoundedCornerShape(10.dp),
+                        elevation = CardDefaults.cardElevation(1.dp)
                     ) {
                         Row(
-                            Modifier.padding(8.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp, horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             ExerciseListItem(

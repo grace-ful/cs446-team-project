@@ -9,6 +9,7 @@ import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.network.ApiClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class WorkoutSessionViewModel : ViewModel() {
@@ -17,6 +18,9 @@ class WorkoutSessionViewModel : ViewModel() {
     val uiState: StateFlow<WorkoutSessionUI> = _uiState
 
     private var apiService: WorkoutSessionApiService? = null
+
+    private val _sessionDeleted = MutableStateFlow(false)
+    val sessionDeleted: StateFlow<Boolean> = _sessionDeleted
 
     fun initApi(context: Context) {
         apiService = ApiClient.getWorkoutSessionApi(context)
@@ -107,12 +111,43 @@ class WorkoutSessionViewModel : ViewModel() {
     fun deleteWorkoutSession(onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                apiService?.deleteWorkoutSession(uiState.value.id)
-                Log.d("WorkoutSessionVM", "Deleted session: ${uiState.value.id}")
+                val api = apiService
+                if (api == null) {
+                    Log.e("WorkoutSessionVM", "API service is null!")
+                    return@launch
+                }
+
+                Log.d("WorkoutSessionVM", "Deleting session: ${_uiState.value.id}")
+                api.deleteWorkoutSession(_uiState.value.id)
+                Log.d("WorkoutSessionVM", "Deleted session: ${_uiState.value.id}")
+
+                _sessionDeleted.value = true
                 onSuccess()
+
             } catch (e: Exception) {
                 Log.e("WorkoutSessionVM", "Failed to delete session: ${e.message}")
+                e.printStackTrace()
             }
         }
+    }
+
+    fun removeSet(exerciseId: String, index: Int, onEmpty: () -> Unit) {
+        _uiState.update { state ->
+            val updatedSessions = state.exerciseSessions.map { session ->
+                if (session.id == exerciseId) {
+                    val newSets = session.sets.toMutableList()
+                    if (index in newSets.indices) {
+                        newSets.removeAt(index)
+                    }
+                    if (newSets.isEmpty()) onEmpty()
+                    session.copy(sets = newSets)
+                } else session
+            }
+            state.copy(exerciseSessions = updatedSessions)
+        }
+    }
+
+    fun setSessionDeleted() {
+        _sessionDeleted.value = true
     }
 }

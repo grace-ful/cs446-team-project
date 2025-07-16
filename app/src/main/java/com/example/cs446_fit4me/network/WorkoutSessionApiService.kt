@@ -24,7 +24,7 @@ interface WorkoutSessionApiService {
     ): WorkoutSessionStartResponse
 
     @DELETE("workout-sessions/{id}")
-    suspend fun deleteWorkoutSession(@Path("id") id: String)
+    suspend fun deleteWorkoutSession(@Path("id") id: String): retrofit2.Response<Unit>
 
     data class WorkoutSessionStartResponse(
         val workoutSessionId: String
