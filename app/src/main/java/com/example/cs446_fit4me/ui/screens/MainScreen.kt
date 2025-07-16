@@ -146,8 +146,6 @@ fun MainScreen() {
                 } else {
                     SelectExerciseScreen(
                         navController = navController,
-                        initiallySelected = workoutViewModel.selectedExercises,
-                        onExerciseSelected = { workoutViewModel.addExercise(it) },
                         exercises = workoutViewModel.allExercises
                     )
                 }

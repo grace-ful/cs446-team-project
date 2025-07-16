@@ -29,17 +29,25 @@ import com.example.cs446_fit4me.network.ApiClient
 @Composable
 fun SelectExerciseScreen(
     navController: NavController,
-    initiallySelected: List<ExerciseTemplate>,
-    onExerciseSelected: (ExerciseTemplate) -> Unit,
     exercises: List<ExerciseTemplate>,
+//    onExerciseSelected: (ExerciseTemplate) -> Unit, // Probably not using it
 ) {
+    // CHANGED: Get selected exercises from previous back stack entry
+    val initiallySelected = remember {
+        navController.previousBackStackEntry
+            ?.savedStateHandle
+            ?.get<ArrayList<ExerciseTemplate>>("selectedExercises")
+            ?.toList() ?: emptyList()
+    }
+
     val context = LocalContext.current
     var searchText by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
-    // KEY CHANGE: Reset selection every time this screen opens with new initiallySelected
+    // KEY: Maintain and update the selected exercises
     val selectedExercises = remember { mutableStateListOf<ExerciseTemplate>() }
+    // CHANGED: Use LaunchedEffect to update whenever initiallySelected changes
     LaunchedEffect(initiallySelected) {
         selectedExercises.clear()
         selectedExercises.addAll(initiallySelected)
@@ -67,7 +75,6 @@ fun SelectExerciseScreen(
                 myExercises = response
                 myExercisesLoaded = true
             } catch (e: Exception) {
-                Log.e("SelectExerciseScreen", "Failed to load my exercises: ${e.message}")
                 errorMessage = "Failed to load your exercises"
             } finally {
                 isLoading = false
@@ -86,13 +93,12 @@ fun SelectExerciseScreen(
     }
 
     // UI LAYOUT
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(0.dp)
     ) {
-        // SEARCH BAR at the top
+        // SEARCH BAR
         OutlinedTextField(
             value = searchText,
             onValueChange = { searchText = it },
@@ -262,6 +268,7 @@ fun SelectExerciseScreen(
         }
     }
 }
+
 
 @Composable
 fun FilterButton(
