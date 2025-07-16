@@ -28,25 +28,26 @@ import com.example.cs446_fit4me.ui.components.WorkoutPreviewDialog
 fun WorkoutScreen(
     navController: NavController,
     workoutViewModel: WorkoutViewModel = viewModel(),
-    onEditWorkout: (WorkoutModel) -> Unit // <-- Added parameter
+    onEditWorkout: (WorkoutModel) -> Unit
 ) {
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesManager(context) }
     val userId by userPrefs.userIdFlow.collectAsState(initial = null)
 
-    var standardWorkouts = workoutViewModel.standardWorkouts
+    val standardWorkouts = workoutViewModel.standardWorkouts
     val myWorkouts by remember { derivedStateOf { workoutViewModel.myWorkouts } }
+
+    var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }
+    var selectedStandardWorkoutName by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         workoutViewModel.fetchStandardWorkouts(context)
         workoutViewModel.fetchUserWorkouts(context)
     }
 
-    // For preview dialog
     var previewWorkout by remember { mutableStateOf<WorkoutModel?>(null) }
     var previewIsCustom by remember { mutableStateOf(false) }
 
-    // Handle exercises returned from SelectExercisesScreen
     val navBackStackEntry = navController.currentBackStackEntry
     LaunchedEffect(navBackStackEntry?.savedStateHandle?.get<ArrayList<ExerciseTemplate>>("selectedExercises")) {
         val returnedExercises = navBackStackEntry
@@ -58,13 +59,12 @@ fun WorkoutScreen(
         }
     }
 
-    // Show preview dialog
     if (previewWorkout != null) {
         WorkoutPreviewDialog(
             workout = previewWorkout!!,
             isCustom = previewIsCustom,
             onClose = { previewWorkout = null },
-            onStart = { /* TODO: Start workout logic */ },
+            onStart = { /* TODO */ },
             onDelete = {
                 previewWorkout?.let { w ->
                     if (previewIsCustom) {
@@ -76,7 +76,7 @@ fun WorkoutScreen(
             onEdit = {
                 val workout = previewWorkout!!
                 previewWorkout = null
-                onEditWorkout(workout) // Use the passed-in lambda
+                onEditWorkout(workout)
             }
         )
     }
@@ -113,11 +113,17 @@ fun WorkoutScreen(
                     onWorkoutClick = { workout ->
                         previewWorkout = workout
                         previewIsCustom = !workout.isGeneric
-                    }
+                    },
                     selectedMyWorkoutName = selectedMyWorkoutName,
                     selectedStandardWorkoutName = selectedStandardWorkoutName,
-                    onMyWorkoutLongPress = { selectedMyWorkoutName = it; selectedStandardWorkoutName = null },
-                    onStandardWorkoutLongPress = { selectedStandardWorkoutName = it; selectedMyWorkoutName = null },
+                    onMyWorkoutLongPress = {
+                        selectedMyWorkoutName = it
+                        selectedStandardWorkoutName = null
+                    },
+                    onStandardWorkoutLongPress = {
+                        selectedStandardWorkoutName = it
+                        selectedMyWorkoutName = null
+                    },
                     onMyWorkoutDeselect = { selectedMyWorkoutName = null },
                     onStandardWorkoutDeselect = { selectedStandardWorkoutName = null },
                     onStartWorkoutClicked = { templateId ->
@@ -140,21 +146,18 @@ fun WorkoutScreen(
 fun CombinedWorkoutSection(
     myWorkouts: List<WorkoutModel>,
     standardWorkouts: List<WorkoutModel>,
-    onWorkoutClick: (WorkoutModel) -> Unit
-    // My Workouts
-    val myLabel = if (myWorkouts.size == 1) "My Workout (1)" else "My Workouts (${myWorkouts.size})"
+    onWorkoutClick: (WorkoutModel) -> Unit,
     selectedMyWorkoutName: String? = null,
     selectedStandardWorkoutName: String? = null,
     onMyWorkoutLongPress: (String) -> Unit = {},
     onStandardWorkoutLongPress: (String) -> Unit = {},
     onMyWorkoutDeselect: () -> Unit = {},
     onStandardWorkoutDeselect: () -> Unit = {},
-    onStartWorkoutClicked: (String) -> Unit = {} // ⬅️ add callback for launching sessions
+    onStartWorkoutClicked: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
 
-    // --- My Workouts ---
-    val myLabel = if (myWorkouts.size <= 1) "My Workout (${myWorkouts.size})" else "My Workouts (${myWorkouts.size})"
+    val myLabel = if (myWorkouts.size == 1) "My Workout (1)" else "My Workouts (${myWorkouts.size})"
     Text(myLabel, style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -187,7 +190,7 @@ fun CombinedWorkoutSection(
     }
 
     Spacer(modifier = Modifier.height(24.dp))
-    // Stadard workouts
+
     val standardLabel = "Standard Workouts (${standardWorkouts.size})"
     Text(standardLabel, style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(8.dp))

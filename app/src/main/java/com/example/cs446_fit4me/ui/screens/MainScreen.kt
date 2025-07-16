@@ -182,6 +182,7 @@ fun MainScreen() {
                         Text("Workout not found!")
                     }
                 }
+            }
 
             composable("workout_session/{sessionId}") { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
