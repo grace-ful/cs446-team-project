@@ -24,11 +24,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import com.example.cs446_fit4me.ui.viewmodel.*
+import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.navigation.BottomNavItem
+import java.time.LocalDate
 
 
 @Composable
 fun HomeScreen(navController: NavController? = null, username: String) {
+    val quoteOfTheDay = remember {
+        val index = LocalDate.now().dayOfYear % Quote.motivationalQuotes.size
+        Quote.motivationalQuotes[index]
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -120,13 +127,14 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         // Motivational quote
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-                Text("💪 Motivation")
-                Text(
-                    "“Success isn’t always about greatness. It’s about consistency.”",
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text("💪 Motivation", style = MaterialTheme.typography.titleMedium)
+                Text("\"${quoteOfTheDay.text}\"", style = MaterialTheme.typography.bodySmall)
+                quoteOfTheDay.author?.let {
+                    Text("- $it", style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
+
     }
 }
 
