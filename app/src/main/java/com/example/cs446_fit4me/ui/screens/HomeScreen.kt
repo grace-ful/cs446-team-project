@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import com.example.cs446_fit4me.ui.viewmodel.*
 import com.example.cs446_fit4me.navigation.BottomNavItem
 
 
@@ -93,7 +96,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             QuickButton("Workouts") { navController?.navigate("workout") }
             QuickButton("Exercises") { navController?.navigate("exercises") }
             QuickButton("Messages") { navController?.navigate("messages") }
-            QuickButton("Match") { navController?.navigate("find_match") }
+            //QuickButton("Match") { navController?.navigate("find_match") }
         }
 
         // Matches preview (placeholder for now)
@@ -102,9 +105,16 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+//            var context = LocalContext.current
+//            val viewModel = remember { MatchingViewModel() }
+//            viewModel.fetchUserMatches(context)
+//            val matches = viewModel.matches
+
             MatchChip("Tom")
             MatchChip("Sara")
-            MatchChip("+ Find more")
+            MatchChip("+ Find more") {
+                navController?.navigate("find_match")
+            }
         }
 
         // Motivational quote
@@ -142,13 +152,13 @@ fun QuickButton(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun MatchChip(name: String) {
+fun MatchChip(name: String, onClick: () -> Unit = {}) {
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.secondary,
         modifier = Modifier
             .padding(vertical = 4.dp)
-            .clickable { /* TODO: Match profile */ }
+            .clickable(onClick = onClick)
     ) {
         Text(
             text = name,
