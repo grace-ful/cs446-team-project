@@ -15,6 +15,11 @@ import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.network.ApiClient
 import kotlinx.coroutines.launch
+import android.os.Build
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+
 
 @Composable
 fun SignUpScreen(
@@ -141,6 +146,60 @@ fun SignUpScreen(
         }
     }
 }
+
+@Composable
+fun CityAutocompleteField(
+    cityQuery: String,
+    selectedCountry: String,
+    predictions: List<String>,
+    onCityQueryChange: (String) -> Unit,
+    onLocationChange: (String) -> Unit
+) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    var expanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(cityQuery) {
+        expanded = predictions.isNotEmpty()
+    }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = cityQuery,
+            onValueChange = {
+                onCityQueryChange(it)
+                onLocationChange("$it, $selectedCountry")
+                expanded = true
+            },
+            label = { Text("City") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            predictions.forEach { prediction ->
+                DropdownMenuItem(
+                    text = { Text(prediction) },
+                    onClick = {
+                        onCityQueryChange(prediction)
+                        onLocationChange("$prediction, $selectedCountry")
+                        expanded = false
+                        keyboardController?.hide()
+                    }
+                )
+            }
+        }
+    }
+}
+
+
 
 
 
@@ -289,25 +348,36 @@ fun ProfileSetupScreenContent(
             selectedCountry = it
         }
 
-        // City input + dropdown
-        OutlinedTextField(
-            value = cityQuery,
-            onValueChange = { cityQuery = it },
-            label = { Text("City") },
-            modifier = Modifier.fillMaxWidth()
+//        // City input + dropdown
+//        OutlinedTextField(
+//            value = cityQuery,
+//            onValueChange = { cityQuery = it },
+//            label = { Text("City") },
+//            modifier = Modifier.fillMaxWidth()
+//        )
+//
+//        // Show predictions
+//        cityPredictions.forEach { prediction ->
+//            DropdownMenuItem(
+//                text = { Text(prediction) },
+//                onClick = {
+//                    cityQuery = prediction
+//                    cityPredictions = listOf()
+//                    onLocationChange("$prediction, $selectedCountry") // pass combined location back
+//                }
+//            )
+//        }
+
+        val safePredictions = listOf("Toronto", "Vancouver", "Montreal",)
+
+        CityAutocompleteField(
+            cityQuery = cityQuery,
+            selectedCountry = selectedCountry,
+            predictions = safePredictions, //cityPredictions
+            onCityQueryChange = { cityQuery = it },
+            onLocationChange = onLocationChange
         )
 
-        // Show predictions
-        cityPredictions.forEach { prediction ->
-            DropdownMenuItem(
-                text = { Text(prediction) },
-                onClick = {
-                    cityQuery = prediction
-                    cityPredictions = listOf()
-                    onLocationChange("$prediction, $selectedCountry") // pass combined location back
-                }
-            )
-        }
 
         EnumDropdown("Time Preference", TimePreference.values().map { it.name }, timePreference.name) {
             onTimePrefChange(TimePreference.valueOf(it))
