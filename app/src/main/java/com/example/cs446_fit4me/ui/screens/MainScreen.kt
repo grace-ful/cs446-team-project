@@ -186,12 +186,10 @@ fun MainScreen() {
 
             composable("workout_session/{sessionId}") { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
-                val viewModel = remember { WorkoutSessionViewModel() }
-
                 WorkoutSessionScreen(
                     sessionId = sessionId,
                     navController = navController,
-                    viewModel = viewModel
+                    viewModel = remember { WorkoutSessionViewModel() }
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,8 +21,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.model.*
-import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.ui.components.WorkoutPreviewDialog
+import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +65,21 @@ fun WorkoutScreen(
             workout = previewWorkout!!,
             isCustom = previewIsCustom,
             onClose = { previewWorkout = null },
-            onStart = { /* TODO */ },
+            onStart = {
+                previewWorkout?.let { w ->
+                    workoutViewModel.startWorkoutSessionFromTemplate(
+                        context = context,
+                        templateId = w.id,
+                        onSuccess = { sessionId ->
+                            previewWorkout = null
+                            navController.navigate("workout_session/$sessionId")
+                        },
+                        onError = { error ->
+                            Log.e("WorkoutScreen", "Failed to start session: $error")
+                        }
+                    )
+                }
+            },
             onDelete = {
                 previewWorkout?.let { w ->
                     if (previewIsCustom) {
@@ -141,6 +156,7 @@ fun WorkoutScreen(
         }
     }
 }
+
 
 @Composable
 fun CombinedWorkoutSection(
