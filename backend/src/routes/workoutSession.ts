@@ -143,13 +143,39 @@ workoutSessionRouter.put("/:id", async (req: Request, res: Response) => {
 
 // Delete session
 workoutSessionRouter.delete("/:id", async (req: Request, res: Response) => {
+	const sessionId = req.params.id;
+
 	try {
-		await prisma.workoutSession.delete({ where: { id: req.params.id } });
+		// Find all exercise sessions linked to this workout
+		const exerciseSessions = await prisma.exerciseSession.findMany({
+			where: { workoutSessionId: sessionId },
+			select: { id: true },
+		});
+
+		// Delete all sets for each exercise session
+		await prisma.exerciseSet.deleteMany({
+			where: {
+				exerciseSessionId: { in: exerciseSessions.map(es => es.id) }
+			}
+		});
+
+		// Delete the exercise sessions
+		await prisma.exerciseSession.deleteMany({
+			where: { workoutSessionId: sessionId }
+		});
+
+		// Delete the workout session itself
+		await prisma.workoutSession.delete({
+			where: { id: sessionId }
+		});
+
 		res.status(204).send();
-	} catch (err: any) {
+	} catch (err) {
+		console.error(err);
 		res.status(400).json({ error: "Failed to delete WorkoutSession." });
 	}
 });
+
 
 workoutSessionRouter.post("/from-template/:templateId", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
 	const templateId = req.params.templateId;
