@@ -114,6 +114,22 @@ fun WorkoutScreen(
                         previewWorkout = workout
                         previewIsCustom = !workout.isGeneric
                     }
+                    selectedMyWorkoutName = selectedMyWorkoutName,
+                    selectedStandardWorkoutName = selectedStandardWorkoutName,
+                    onMyWorkoutLongPress = { selectedMyWorkoutName = it; selectedStandardWorkoutName = null },
+                    onStandardWorkoutLongPress = { selectedStandardWorkoutName = it; selectedMyWorkoutName = null },
+                    onMyWorkoutDeselect = { selectedMyWorkoutName = null },
+                    onStandardWorkoutDeselect = { selectedStandardWorkoutName = null },
+                    onStartWorkoutClicked = { templateId ->
+                        workoutViewModel.startWorkoutSessionFromTemplate(
+                            context = context,
+                            templateId = templateId,
+                            onSuccess = { sessionId ->
+                                navController.navigate("workout_session/$sessionId")
+                            },
+                            onError = { error -> println("Failed to start session: $error") }
+                        )
+                    }
                 )
             }
         }
@@ -125,9 +141,20 @@ fun CombinedWorkoutSection(
     myWorkouts: List<WorkoutModel>,
     standardWorkouts: List<WorkoutModel>,
     onWorkoutClick: (WorkoutModel) -> Unit
-) {
     // My Workouts
     val myLabel = if (myWorkouts.size == 1) "My Workout (1)" else "My Workouts (${myWorkouts.size})"
+    selectedMyWorkoutName: String? = null,
+    selectedStandardWorkoutName: String? = null,
+    onMyWorkoutLongPress: (String) -> Unit = {},
+    onStandardWorkoutLongPress: (String) -> Unit = {},
+    onMyWorkoutDeselect: () -> Unit = {},
+    onStandardWorkoutDeselect: () -> Unit = {},
+    onStartWorkoutClicked: (String) -> Unit = {} // ⬅️ add callback for launching sessions
+) {
+    val context = LocalContext.current
+
+    // --- My Workouts ---
+    val myLabel = if (myWorkouts.size <= 1) "My Workout (${myWorkouts.size})" else "My Workouts (${myWorkouts.size})"
     Text(myLabel, style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -160,8 +187,7 @@ fun CombinedWorkoutSection(
     }
 
     Spacer(modifier = Modifier.height(24.dp))
-
-    // Standard Workouts
+    // Stadard workouts
     val standardLabel = "Standard Workouts (${standardWorkouts.size})"
     Text(standardLabel, style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(8.dp))
@@ -213,20 +239,32 @@ fun WorkoutCard(
             .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                exercises,
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = exercises,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+
             timeAgo?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(it, style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
         }
