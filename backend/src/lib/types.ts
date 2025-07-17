@@ -65,3 +65,9 @@ export enum Equipment {
 export interface AuthRequest extends Request {
 	userId?: string
 }
+
+export interface ChatMessage {
+  senderId: string;
+  receiverId: string;
+  content: string;
+}

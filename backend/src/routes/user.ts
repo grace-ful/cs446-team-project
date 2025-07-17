@@ -124,6 +124,7 @@ userRouter.post("/login", async (req: Request, res: Response): Promise<any> => {
 
 		const { passwordHash, ...userWithoutPassword } = user;
 		res.status(200).json({
+			id: user.id,
 			user: userWithoutPassword,
 			token: `Bearer ${token}`,
 		});

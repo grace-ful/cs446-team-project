@@ -110,6 +110,8 @@ model User {
   PR                      PR[]
   matchesInitiated MatchEntry[] @relation("MatchesInitiated")
   matchesReceived  MatchEntry[] @relation("MatchesReceived")
+  SentMessages Message[] @relation("SentMessages")
+  ReceivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model WorkoutTemplate {
@@ -211,4 +213,15 @@ model MatchEntry {
 
   matcher     User @relation("MatchesInitiated", fields: [userId], references: [id])
   matchee     User @relation("MatchesReceived", fields: [matchedUserId], references: [id])
+}
+
+model Message {
+  id String @id @default(uuid())
+  senderId String
+  receiverId String
+  content String
+  createdAt DateTime @default(now())
+
+  sender     User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
