@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,8 +35,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
-import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
-
 
 // Sealed class for navigation routes (as defined in step 1)
 sealed class SettingsScreen(val route: String) {
@@ -58,6 +58,7 @@ sealed class SettingsScreen(val route: String) {
 @Composable
 fun SettingsMainScreen(navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -140,12 +141,51 @@ fun SettingsMainScreen(navController: NavController) {
             // DANGER ZONE
             SettingsSectionHeader("DANGER ZONE")
             SettingsItem("Logout", textStyle = TextStyle(color = MaterialTheme.colorScheme.error)) {
+                showLogoutDialog = true
                 //navController.navigate(SettingsScreen.Logout.route)
             }
             SettingsItem("Delete Account", textStyle = TextStyle(color = MaterialTheme.colorScheme.error)) {
                 //navController.navigate(SettingsScreen.DeleteAccount.route)
             }
         }
+        if (showLogoutDialog) {
+            AlertDialog(
+                onDismissRequest = { showLogoutDialog = false },
+                title = { Text("Log out") },
+                text = { Text("Are you sure you want to log out?") },
+                confirmButton = {
+                    Text(
+                        "Yes",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .clickable {
+                                showLogoutDialog = false
+                                try {
+                                    navController.navigate("login") {
+                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                } catch (e: Exception) {
+                                    println("Settings Screen - Logout navigation failed: ${e.message}")
+                                }
+                            },
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
+                dismissButton = {
+                    Text(
+                        "No",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .clickable {
+                                showLogoutDialog = false
+                            },
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            )
+        }
+
     }
 }
 

@@ -8,6 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.cs446_fit4me.LoginScreen
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
@@ -25,6 +30,7 @@ import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
 import com.example.cs446_fit4me.ui.screens.EditWorkoutScreen
 import com.example.cs446_fit4me.ui.screens.WorkoutScreen
 import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
+import com.example.cs446_fit4me.navigation.AppRoutes
 
 @Composable
 fun MainScreen() {
@@ -112,6 +118,22 @@ fun MainScreen() {
                 LaunchedEffect(Unit) { viewModel.fetchUserMatches(context) }
                 MatchingScreen(matches = matches)
             }
+            composable(BottomNavItem.Profile.route) { ProfileScreen() }
+
+            composable(AppRoutes.SETTINGS) {
+                SettingsMainScreen(navController)
+            }
+            composable(AppRoutes.EXERCISES) { ExercisesScreen(navController) }
+
+
+            composable(AppRoutes.CREATE_WORKOUT) {
+                CreateWorkoutScreen(
+                    navController = navController,
+                    workoutViewModel = workoutViewModel,
+                    onAddExerciseClicked = { navController.navigate("select_exercise") },
+                    onCreateWorkout = { name -> /* TODO */ }
+                )
+            }
             composable(BottomNavItem.Workout.route) {
                 WorkoutScreen(
                     navController = navController,
@@ -121,18 +143,9 @@ fun MainScreen() {
                     }
                 )
             }
-            composable(BottomNavItem.Profile.route) { ProfileScreen() }
-            composable("settings") { SettingsMainScreen(navController) }
-            composable("exercises") { ExercisesScreen(navController) }
-            composable("create_workout") {
-                CreateWorkoutScreen(
-                    navController = navController,
-                    workoutViewModel = workoutViewModel,
-                    onAddExerciseClicked = { navController.navigate("select_exercise") },
-                    onCreateWorkout = { name -> /* TODO */ }
-                )
-            }
-            composable("select_exercise") {
+
+            composable(AppRoutes.SELECT_EXERCISE) {
+
                 val context = LocalContext.current
                 val isLoading by workoutViewModel.isLoadingExercises
                 LaunchedEffect(Unit) { workoutViewModel.fetchAllExerciseTemplates(context) }
@@ -192,6 +205,15 @@ fun MainScreen() {
                     viewModel = remember { WorkoutSessionViewModel() }
                 )
             }
+            composable("login") {
+                var showMain by remember { mutableStateOf(false) }
+                var currentScreen by remember { mutableStateOf("mainscreen") }
+                LoginScreen(
+                    onLoginSuccess = { showMain = true },
+                    onNavigateToSignUp = { currentScreen = "signup" }
+                )
+            }
+
         }
     }
 }

@@ -17,74 +17,165 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import com.example.cs446_fit4me.ui.viewmodel.*
+import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.navigation.BottomNavItem
+import java.time.LocalDate
 
 
 @Composable
 fun HomeScreen(navController: NavController? = null, username: String) {
-    Box(
+    val quoteOfTheDay = remember {
+        val index = LocalDate.now().dayOfYear % Quote.motivationalQuotes.size
+        Quote.motivationalQuotes[index]
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Profile button in top-right
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(48.dp)
-                .clickable {
-                    navController?.navigate(BottomNavItem.Profile.route)
-                },
-            contentAlignment = Alignment.Center
+        // Header with avatar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Text("Hey $username 👋", style = MaterialTheme.typography.headlineMedium)
+
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary
-            ) {
-                Text(
-                    text = username.first().uppercaseChar().toString(),
-                    fontSize = 24.sp,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .wrapContentSize(Alignment.Center)
-                )
-            }
-        }
-
-        // Main content
-        Column(
-            modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Welcome to the Home Screen!",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 40.dp)
-            )
-
-            Button(
-                onClick = { navController?.navigate("workout") },
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                    .size(48.dp)
+                    .clickable {
+                        navController?.navigate(BottomNavItem.Profile.route)
+                    }
             ) {
-                Text(text = "Workout")
-            }
-
-            Button(
-                onClick = { navController?.navigate("exercises") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Exercises")
+                Box(Modifier.wrapContentSize(Alignment.Center)) {
+                    Text(
+                        text = username.first().uppercaseChar().toString(),
+                        fontSize = 24.sp,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
         }
+
+        // Today's Workout card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { navController?.navigate("workout") }
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Today's Workout", style = MaterialTheme.typography.titleMedium)
+                Text("Leg Day • 5 exercises • 45 mins", style = MaterialTheme.typography.bodyMedium)
+                Text("Tap to continue ➡️", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        // Stats row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            StatBox("🔥", "Streak", "4 days")
+            StatBox("📈", "Level", "Beginner")
+            StatBox("⚖️", "Calories", "1150 kcal")
+        }
+
+        // Quick links
+        Text("Quick Access", style = MaterialTheme.typography.titleMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            QuickButton("Workouts") { navController?.navigate("workout") }
+            QuickButton("Exercises") { navController?.navigate("exercises") }
+            QuickButton("Messages") { navController?.navigate("messages") }
+            //QuickButton("Match") { navController?.navigate("find_match") }
+        }
+
+        // Matches preview (placeholder for now)
+        Text("Suggested Matches", style = MaterialTheme.typography.titleMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+//            var context = LocalContext.current
+//            val viewModel = remember { MatchingViewModel() }
+//            viewModel.fetchUserMatches(context)
+//            val matches = viewModel.matches
+
+            MatchChip("Tom")
+            MatchChip("Sara")
+            MatchChip("+ Find more") {
+                navController?.navigate("find_match")
+            }
+        }
+
+        // Motivational quote
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text("💪 Motivation", style = MaterialTheme.typography.titleMedium)
+                Text("\"${quoteOfTheDay.text}\"", style = MaterialTheme.typography.bodySmall)
+                quoteOfTheDay.author?.let {
+                    Text("- $it", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+
     }
 }
+
+@Composable
+fun StatBox(emoji: String, label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(emoji, style = MaterialTheme.typography.headlineMedium)
+        Text(label, style = MaterialTheme.typography.labelMedium)
+        Text(value, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+fun QuickButton(label: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = CircleShape,
+        modifier = Modifier
+            .height(40.dp)
+    ) {
+        Text(label)
+    }
+}
+
+@Composable
+fun MatchChip(name: String, onClick: () -> Unit = {}) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondary,
+        modifier = Modifier
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Text(
+            text = name,
+            color = MaterialTheme.colorScheme.onSecondary,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        )
+    }
+}
+
 
 
 
