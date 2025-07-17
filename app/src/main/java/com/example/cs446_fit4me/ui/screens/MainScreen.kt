@@ -33,7 +33,7 @@ import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
 import com.example.cs446_fit4me.navigation.AppRoutes
 
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit = {}) {
     var userName by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
@@ -205,15 +205,9 @@ fun MainScreen() {
                     viewModel = remember { WorkoutSessionViewModel() }
                 )
             }
-            composable("login") {
-                var showMain by remember { mutableStateOf(false) }
-                var currentScreen by remember { mutableStateOf("mainscreen") }
-                LoginScreen(
-                    onLoginSuccess = { showMain = true },
-                    onNavigateToSignUp = { currentScreen = "signup" }
-                )
+            composable(AppRoutes.SETTINGS) {
+                SettingsMainScreen(navController = navController, onLogout = onLogout) // ← ✅ THIS FIXES IT
             }
-
         }
     }
 }
