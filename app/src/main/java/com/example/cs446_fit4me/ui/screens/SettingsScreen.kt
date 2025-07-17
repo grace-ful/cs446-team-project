@@ -36,24 +36,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import com.example.cs446_fit4me.datastore.TokenManager
-
-// Sealed class for navigation routes (as defined in step 1)
-sealed class SettingsScreen(val route: String) {
-    object EditAccountInfo : SettingsScreen("settings_main")
-    object ChangePassword : SettingsScreen("account_settings")
-    object NotificationSettings: SettingsScreen("notification_settings")
-    object RemindMe: SettingsScreen("remind_me")
-    object Units: SettingsScreen("units")
-    object Accessibility: SettingsScreen("accessibility")
-    object ProfileVisibility: SettingsScreen("profile_visibility")
-    object MatchingPreferences: SettingsScreen("matching_preferences")
-    object WorkoutHistory: SettingsScreen("workout_history")
-    object Rate: SettingsScreen("rate")
-    object HelpSupport: SettingsScreen("help_support")
-    object Logout: SettingsScreen("logout")
-    object DeleteAccount: SettingsScreen("delete_account")
-    // Add others as needed, e.g., Logout
-}
+import com.example.cs446_fit4me.navigation.AppRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,59 +77,58 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
             // ACCOUNT SETTINGS
             SettingsSectionHeader("ACCOUNT SETTINGS")
             SettingsItem("Edit Account Info") {
-                //navController.navigate(SettingsScreen.EditAccountInfo.route)
+                navController.navigate(AppRoutes.EDIT_ACCOUNT_INFO)
             }
             SettingsItem("Change Password") {
-                //navController.navigate(SettingsScreen.ChangePassword.route) // Add this route if needed
+                navController.navigate(AppRoutes.CHANGE_PASSWORD)
             }
 
             // NOTIFICATIONS
             SettingsSectionHeader("NOTIFICATIONS")
             SettingsItem("Notification Settings") {
-                //navController.navigate(SettingsScreen.NotificationSettings.route)
+                navController.navigate(AppRoutes.NOTIFICATION_SETTINGS)
             }
             SettingsItem("Remind Me") {
-                //navController.navigate(SettingsScreen.RemindMe.route) // Add this route if needed
+                navController.navigate(AppRoutes.REMIND_ME)
             }
 
             // APPEARANCE
             SettingsSectionHeader("APPEARANCE")
             SettingsItem("Units") {
-                //navController.navigate(SettingsScreen.Units.route)
+                navController.navigate(AppRoutes.UNITS)
             }
             SettingsItem("Accessibility") {
-                //navController.navigate(SettingsScreen.Accessibility.route)
+                navController.navigate(AppRoutes.ACCESSIBILITY)
             }
 
             // PRIVACY
             SettingsSectionHeader("PRIVACY")
             SettingsItem("Profile Visibility") {
-                //navController.navigate(SettingsScreen.ProfileVisibility.route)
+                navController.navigate(AppRoutes.PROFILE_VISIBILITY)
             }
             SettingsItem("Matching Preferences") {
-                //navController.navigate(SettingsScreen.MatchingPreferences.route)
+                navController.navigate(AppRoutes.MATCHING_PREFERENCES)
             }
             SettingsItem("Workout History") {
-                //navController.navigate(SettingsScreen.WorkoutHistory.route)
+                navController.navigate(AppRoutes.WORKOUT_HISTORY)
             }
 
             // SUPPORT
             SettingsSectionHeader("SUPPORT")
             SettingsItem("Rate") {
-                //navController.navigate(SettingsScreen.Rate.route)
+                navController.navigate(AppRoutes.RATE)
             }
             SettingsItem("Help Center") {
-                //navController.navigate(SettingsScreen.HelpSupport.route)
+                navController.navigate(AppRoutes.HELP_SUPPORT)
             }
 
             // DANGER ZONE
             SettingsSectionHeader("DANGER ZONE")
             SettingsItem("Logout", textStyle = TextStyle(color = MaterialTheme.colorScheme.error)) {
                 showLogoutDialog = true
-                //navController.navigate(SettingsScreen.Logout.route)
             }
             SettingsItem("Delete Account", textStyle = TextStyle(color = MaterialTheme.colorScheme.error)) {
-                //navController.navigate(SettingsScreen.DeleteAccount.route)
+
             }
         }
         if (showLogoutDialog) {

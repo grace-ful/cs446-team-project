@@ -31,6 +31,7 @@ import com.example.cs446_fit4me.ui.screens.EditWorkoutScreen
 import com.example.cs446_fit4me.ui.screens.WorkoutScreen
 import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
 import com.example.cs446_fit4me.navigation.AppRoutes
+import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
 
 @Composable
 fun MainScreen(onLogout: () -> Unit = {}) {
@@ -208,6 +209,18 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             composable(AppRoutes.SETTINGS) {
                 SettingsMainScreen(navController = navController, onLogout = onLogout) // ← ✅ THIS FIXES IT
             }
+            composable(AppRoutes.EDIT_ACCOUNT_INFO) { EditAccountInfoScreen(navController) }
+            composable(AppRoutes.CHANGE_PASSWORD) { ChangePasswordScreen(navController) }
+            composable(AppRoutes.NOTIFICATION_SETTINGS) { NotificationSettingsScreen(navController) }
+            composable(AppRoutes.REMIND_ME) { RemindMeScreen(navController) }
+            composable(AppRoutes.UNITS) { UnitsScreen(navController) }
+            composable(AppRoutes.ACCESSIBILITY) { AccessibilityScreen(navController) }
+            composable(AppRoutes.PROFILE_VISIBILITY) { ProfileVisibilityScreen(navController) }
+            composable(AppRoutes.MATCHING_PREFERENCES) { MatchingPreferencesScreen(navController) }
+            composable(AppRoutes.WORKOUT_HISTORY) { WorkoutHistoryScreen(navController) }
+            composable(AppRoutes.RATE) { RateScreen(navController) }
+            composable(AppRoutes.HELP_SUPPORT) { HelpSupportScreen(navController) }
+
         }
     }
 }
