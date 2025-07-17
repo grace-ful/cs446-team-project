@@ -20,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.cs446_fit4me.LoginScreen
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
 import com.example.cs446_fit4me.network.ApiClient
@@ -32,6 +33,7 @@ import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.ui.workout.CreateWorkoutScreen
 import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
 import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
+import com.example.cs446_fit4me.navigation.AppRoutes
 
 
 // Main screen that contains the bottom navigation bar and the navigation host
@@ -118,13 +120,13 @@ fun MainScreen() {
             composable(BottomNavItem.Workout.route) { WorkoutScreen(navController) }
             composable(BottomNavItem.Profile.route) { ProfileScreen() }
 
-            composable("settings") {
+            composable(AppRoutes.SETTINGS) {
                 SettingsMainScreen(navController)
             }
-            composable("exercises") { ExercisesScreen(navController) }
+            composable(AppRoutes.EXERCISES) { ExercisesScreen(navController) }
 
 
-            composable("create_workout") {
+            composable(AppRoutes.CREATE_WORKOUT) {
                 CreateWorkoutScreen(
                     navController = navController,
                     workoutViewModel = workoutViewModel,
@@ -135,7 +137,7 @@ fun MainScreen() {
                 )
             }
 
-            composable("select_exercise") {
+            composable(AppRoutes.SELECT_EXERCISE) {
                 val context = LocalContext.current
                 val isLoading by workoutViewModel.isLoadingExercises
 
@@ -172,6 +174,15 @@ fun MainScreen() {
                     viewModel = viewModel
                 )
             }
+            composable("login") {
+                var showMain by remember { mutableStateOf(false) }
+                var currentScreen by remember { mutableStateOf("mainscreen") }
+                LoginScreen(
+                    onLoginSuccess = { showMain = true },
+                    onNavigateToSignUp = { currentScreen = "signup" }
+                )
+            }
+
         }
     }
 }
