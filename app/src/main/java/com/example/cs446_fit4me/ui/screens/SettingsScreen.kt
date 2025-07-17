@@ -35,6 +35,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
+import com.example.cs446_fit4me.datastore.TokenManager
 
 // Sealed class for navigation routes (as defined in step 1)
 sealed class SettingsScreen(val route: String) {
@@ -56,7 +57,7 @@ sealed class SettingsScreen(val route: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsMainScreen(navController: NavController) {
+fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) {
     var searchQuery by remember { mutableStateOf("") }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -161,10 +162,8 @@ fun SettingsMainScreen(navController: NavController) {
                             .clickable {
                                 showLogoutDialog = false
                                 try {
-                                    navController.navigate("login") {
-                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                        launchSingleTop = true
-                                    }
+                                    TokenManager.clearToken(context = navController.context)
+                                    onLogout()
                                 } catch (e: Exception) {
                                     println("Settings Screen - Logout navigation failed: ${e.message}")
                                 }
