@@ -15,6 +15,7 @@ import com.google.gson.Gson
 import java.io.IOException
 import androidx.compose.ui.platform.LocalContext
 import com.example.cs446_fit4me.datastore.TokenManager
+import com.example.cs446_fit4me.datastore.UserManager
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 
 @Composable
@@ -43,6 +44,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
                 val response = ApiClient.getUserApi(context).login(request) // ← Use updated context-aware client
                 println("Login Success: $response")
                 TokenManager.saveToken(context, response.token)
+                UserManager.saveUserId(context, response.id)
+                val res = ApiClient.getMatchingApi(context).updateMatches();
 
                 isLoading = false
                 onLoginSuccess()

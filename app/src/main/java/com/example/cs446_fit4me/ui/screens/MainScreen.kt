@@ -1,40 +1,44 @@
 package com.example.cs446_fit4me.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import MessagesViewModel
+import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.cs446_fit4me.LoginScreen
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.example.cs446_fit4me.LoginScreen
+import com.example.cs446_fit4me.datastore.UserManager
+import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
 import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.ui.chat.ChatScreen
+import com.example.cs446_fit4me.ui.chat.ChatViewModel
 import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
-import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.viewmodel.MatchingViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.ui.workout.CreateWorkoutScreen
 import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
-import com.example.cs446_fit4me.ui.screens.EditWorkoutScreen
-import com.example.cs446_fit4me.ui.screens.WorkoutScreen
 import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
 import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MainScreen(onLogout: () -> Unit = {}) {
+fun MainScreen(onLogout: () -> Unit) {
     var userName by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
@@ -42,6 +46,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     // Tab state for bottom nav (KEY)
     var selectedTab by remember { mutableStateOf(BottomNavItem.Home.route) }
 
+    // Fetch user profile on launch
     LaunchedEffect(Unit) {
         try {
             val user = ApiClient.getUserApi(context).getUserById()
@@ -51,7 +56,18 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         }
     }
 
-    if (userName == null) return // or show loading spinner
+    if (userName == null) {
+        // Loading or error indicator
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (error != null) {
+                Text(text = error ?: "Error loading user.")
+            } else {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
+
     val navController = rememberNavController()
     val workoutViewModel: WorkoutViewModel = viewModel()
     val bottomNavItems = listOf(
@@ -110,22 +126,33 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             startDestination = BottomNavItem.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(BottomNavItem.Home.route) { HomeScreen(navController, username = userName!!) }
-            composable(BottomNavItem.Messages.route) { MessagesScreen(navController) }
+            composable(BottomNavItem.Home.route) {
+                HomeScreen(navController, username = userName!!)
+            }
+
+            // MESSAGES TAB: uses MessagesViewModel with SimpleUser
+            composable(BottomNavItem.Messages.route) {
+                val context = LocalContext.current
+                // Pass ApiClient dependency if required by your MessagesViewModel
+                val api = remember { ApiClient.getChatApi(context) }
+                val viewModel = remember { MessagesViewModel(api) }
+                MessagesScreen(navController = navController, viewModel = viewModel)
+            }
+
             composable(BottomNavItem.FindMatch.route) {
                 val context = LocalContext.current
                 val viewModel = remember { MatchingViewModel() }
                 val matches = viewModel.matches
                 LaunchedEffect(Unit) { viewModel.fetchUserMatches(context) }
-                MatchingScreen(matches = matches)
+                MatchingScreen(matches = matches, navController = navController)
             }
+
             composable(BottomNavItem.Profile.route) { ProfileScreen() }
 
             composable(AppRoutes.SETTINGS) {
-                SettingsMainScreen(navController)
+                SettingsMainScreen(navController, onLogout)
             }
             composable(AppRoutes.EXERCISES) { ExercisesScreen(navController) }
-
 
             composable(AppRoutes.CREATE_WORKOUT) {
                 CreateWorkoutScreen(
@@ -146,7 +173,6 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             }
 
             composable(AppRoutes.SELECT_EXERCISE) {
-
                 val context = LocalContext.current
                 val isLoading by workoutViewModel.isLoadingExercises
                 LaunchedEffect(Unit) { workoutViewModel.fetchAllExerciseTemplates(context) }
@@ -206,8 +232,48 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     viewModel = remember { WorkoutSessionViewModel() }
                 )
             }
-            composable(AppRoutes.SETTINGS) {
-                SettingsMainScreen(navController = navController, onLogout = onLogout) // ← ✅ THIS FIXES IT
+
+            composable("login") {
+                var showMain by remember { mutableStateOf(false) }
+                var currentScreen by remember { mutableStateOf("mainscreen") }
+                LoginScreen(
+                    onLoginSuccess = { showMain = true },
+                    onNavigateToSignUp = { currentScreen = "signup" }
+                )
+            }
+
+            // CHAT SCREEN - single peer chat
+            composable(
+                "chat/{peerUserId}",
+                arguments = listOf(navArgument("peerUserId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val peerUserId = backStackEntry.arguments?.getString("peerUserId") ?: return@composable
+                val context = LocalContext.current
+                val currentUserId = UserManager.getUserId(context)!!
+
+                // Provide ApiService and SocketManager for ViewModel
+                val api = remember { ApiClient.getChatApi(context) }
+                val socketManager = remember {
+                    com.example.cs446_fit4me.chat.ChatSocketManager(
+                        "http://10.0.2.2:3000",
+                        currentUserId
+                    )
+                }
+                val viewModel = remember {
+                    ChatViewModel(
+                        api = api,
+                        socketManager = socketManager,
+                        currentUserId = currentUserId,
+                        peerUserId = peerUserId
+                    )
+                }
+                val messages by viewModel.messages.collectAsState()
+
+                ChatScreen(
+                    messages = messages,
+                    onSend = { viewModel.sendMessage(it) },
+                    currentUserId = currentUserId
+                )
             }
             composable(AppRoutes.EDIT_ACCOUNT_INFO) { EditAccountInfoScreen(navController) }
             composable(AppRoutes.CHANGE_PASSWORD) { ChangePasswordScreen(navController) }
