@@ -2,6 +2,7 @@ import { Router, Response, Request } from "express";
 import { getMessagesFromDb, saveMessageToDb } from "../chat/chatController";
 import authMiddleware from "../middleware/authMiddleware";
 import { AuthRequest } from "../lib/types";
+import { getChatUsersForUser } from "../utils/getChatUsers";
 
 export const chatRouter = Router();
 
@@ -40,6 +41,19 @@ chatRouter.post("/send", authMiddleware, async (req: AuthRequest, res: Response)
     res.status(201).json(saved);
   } catch (e) {
     res.status(500).json({ error: "Failed to send message" });
+  }
+});
+
+chatRouter.get("/conversations", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+  const userId = req.userId;
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+  try {
+    const users = await getChatUsersForUser(userId as string);
+    res.json({ users });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch conversations" });
   }
 });
 
