@@ -13,14 +13,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.cs446_fit4me.model.UserResponse
 import com.example.cs446_fit4me.network.SimpleUser
 
 @Composable
 fun ConversationUserCard(
     user: SimpleUser,
-    onClick: () -> Unit = {},
-    onChatClick: () -> Unit = {}
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -58,14 +56,11 @@ fun ConversationUserCard(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(
-                onClick = onChatClick
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Chat,
-                    contentDescription = "Chat"
-                )
-            }
+            // Chat icon (decorative only, not clickable)
+            Icon(
+                imageVector = Icons.Default.Chat,
+                contentDescription = "Chat"
+            )
         }
     }
 }

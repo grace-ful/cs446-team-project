@@ -50,7 +50,7 @@ fun MessagesScreen(
                     items(users) { user ->
                         ConversationUserCard(
                             user = user,
-                            onChatClick = { navController.navigate("chat/${user.id}") }
+                            onClick = { navController.navigate("chat/${user.id}") }
                         )
                     }
                 }
