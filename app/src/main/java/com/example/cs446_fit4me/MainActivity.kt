@@ -16,6 +16,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import com.example.cs446_fit4me.ui.screens.MainScreen
 import android.util.Log
+import com.example.cs446_fit4me.navigation.AppEntryPoint
 import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.network.TestResponse
 import retrofit2.Call
@@ -25,6 +26,10 @@ import com.google.android.libraries.places.api.Places
 
 
 class MainActivity : ComponentActivity() {
+    private var showMain by mutableStateOf(false)
+    private var currentScreen by mutableStateOf("login")
+    private var resetKey by mutableStateOf(0) // ← NEW
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -51,22 +56,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CS446fit4meTheme {
-                var showMain by remember { mutableStateOf(false) }
-                var currentScreen by remember { mutableStateOf("login") }
-
-                if (showMain) {
-                    MainScreen()
-                } else {
-                    when (currentScreen) {
-                        "login" -> LoginScreen(
-                            onLoginSuccess = { showMain = true },
-                            onNavigateToSignUp = { currentScreen = "signup" }
-                        )
-                        "signup" -> SignUpScreen(
-                            onSignUpSuccess = { showMain = true },
-                            onNavigateToLogin = { currentScreen = "login" }
-                        )
-                    }
+                key(resetKey) {
+                    AppEntryPoint(
+                        showMain = showMain,
+                        currentScreen = currentScreen,
+                        onShowMainChanged = { showMain = it },
+                        onCurrentScreenChanged = { currentScreen = it },
+                        onResetApp = { resetKey++ }
+                    )
                 }
             }
         }

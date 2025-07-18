@@ -11,13 +11,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.network.ApiClient
-import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import com.example.cs446_fit4me.model.UpdateUserRequest
@@ -28,6 +28,7 @@ fun filterDigits(input: String): String = input.filter { it.isDigit() }
 fun filterFloatInput(input: String): String =
     input.filterIndexed { i, c -> c.isDigit() || (c == '.' && !input.take(i).contains('.')) }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
     val context = LocalContext.current
@@ -40,8 +41,6 @@ fun ProfileScreen() {
     var weightLbs by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
 
     var timePreference by remember { mutableStateOf("NONE") }
     var experienceLevel by remember { mutableStateOf("BEGINNER") }
@@ -51,6 +50,15 @@ fun ProfileScreen() {
     var error by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+
+    var originalState by remember {
+        mutableStateOf(
+            listOf(
+                name, age, heightFeet, heightInches, weightLbs, location, email,
+                timePreference, experienceLevel, gymFrequency
+            )
+        )
+    }
 
     // Fetch user data on first composition
     LaunchedEffect(Unit) {
@@ -75,6 +83,11 @@ fun ProfileScreen() {
             experienceLevel = user.experienceLevel.name
             gymFrequency = user.gymFrequency.name
 
+            originalState = listOf(
+                name, age, heightFeet, heightInches, weightLbs, location, email,
+                timePreference, experienceLevel, gymFrequency
+            )
+
         } catch (e: Exception) {
             error = e.localizedMessage ?: "Failed to load profile."
         } finally {
@@ -96,31 +109,19 @@ fun ProfileScreen() {
         return
     }
 
-    val originalState = remember {
-        listOf(
-            name, age, heightFeet, heightInches, weightLbs, location, email,
-            timePreference, experienceLevel, gymFrequency, password, confirmPassword
-        )
-    }
-
     val isAgeValid = age.toIntOrNull()?.let { it in 5..120 } == true
     val isHeightValid = heightFeet.toIntOrNull()?.let { it in 3..8 } == true &&
             heightInches.toIntOrNull()?.let { it in 0..11 } == true
     val isWeightValid = weightLbs.toFloatOrNull()?.let { it in 30f..1000f } == true
-    val isPasswordMatch = password == confirmPassword
     val isFormValid = name.isNotBlank() &&
             isAgeValid &&
             isHeightValid &&
             isWeightValid &&
-            location.isNotBlank() &&
-            email.isNotBlank() &&
-            password.isNotBlank() &&
-            confirmPassword.isNotBlank() &&
-            isPasswordMatch
+            location.isNotBlank()
 
     val currentState = listOf(
         name, age, heightFeet, heightInches, weightLbs, location, email,
-        timePreference, experienceLevel, gymFrequency, password, confirmPassword
+        timePreference, experienceLevel, gymFrequency
     )
 
     val isChanged = currentState != originalState
@@ -215,9 +216,95 @@ fun ProfileScreen() {
         }
 
         item {
-            OutlinedTextField(location, { location = it }, label = { Text("Location") },
-                modifier = Modifier.fillMaxWidth())
+            val keyboardController = LocalSoftwareKeyboardController.current
+            val placesClient = remember { com.google.android.libraries.places.api.Places.createClient(context) }
+
+            var selectedCountry by remember { mutableStateOf("CA") }
+            var cityQuery by remember { mutableStateOf("") }
+            var cityPredictions by remember { mutableStateOf(listOf<String>()) }
+            var isDropdownExpanded by remember { mutableStateOf(false) }
+            var hasUserSelected by remember { mutableStateOf(false) }
+
+            // Initial load: split location into country + city if possible
+            LaunchedEffect(location) {
+                if (location.contains(",")) {
+                    val parts = location.split(",").map { it.trim() }
+                    cityQuery = parts.getOrNull(0) ?: ""
+                    selectedCountry = parts.getOrNull(1) ?: "CA"
+                } else {
+                    cityQuery = location
+                }
+            }
+
+            // Debounced API query
+            LaunchedEffect(cityQuery) {
+                if (cityQuery.isNotBlank() && !hasUserSelected) {
+                    delay(300)
+                    val request = com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest.builder()
+                        .setCountries(listOf(selectedCountry))
+                        .setTypesFilter(listOf("locality"))
+                        .setQuery(cityQuery)
+                        .build()
+
+                    placesClient.findAutocompletePredictions(request)
+                        .addOnSuccessListener { response ->
+                            cityPredictions = response.autocompletePredictions.map { it.getPrimaryText(null).toString() }
+                            isDropdownExpanded = cityPredictions.isNotEmpty()
+                        }
+                        .addOnFailureListener {
+                            cityPredictions = listOf()
+                            isDropdownExpanded = false
+                        }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                EnumDropdown("Country", listOf("CA", "US"), selectedCountry) {
+                    selectedCountry = it
+                }
+
+                ExposedDropdownMenuBox(
+                    expanded = isDropdownExpanded,
+                    onExpandedChange = { isDropdownExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = cityQuery,
+                        onValueChange = {
+                            cityQuery = it
+                            hasUserSelected = false
+                        },
+                        label = { Text("City") },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                        },
+                        singleLine = true
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = isDropdownExpanded,
+                        onDismissRequest = { isDropdownExpanded = false }
+                    ) {
+                        cityPredictions.forEach { prediction ->
+                            DropdownMenuItem(
+                                text = { Text(prediction) },
+                                onClick = {
+                                    cityQuery = prediction
+                                    hasUserSelected = true
+                                    isDropdownExpanded = false
+                                    cityPredictions = listOf()
+                                    location = "$prediction, $selectedCountry"
+                                    keyboardController?.hide()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
+
 
         item {
             EnumDropdown("Time Preference", listOf("NONE", "MORNING", "AFTERNOON", "EVENING", "NIGHT"), timePreference) {
@@ -232,26 +319,13 @@ fun ProfileScreen() {
         }
 
         item {
-            EnumDropdown("Gym Frequency", listOf("NEVER", "RARELY", "OCCASIONALLY", "REGULARLY", "FREQUENTLY", "DAILY"), gymFrequency) {
+            EnumDropdown(
+                "Gym Frequency",
+                listOf("NEVER", "RARELY", "OCCASIONALLY", "REGULARLY", "FREQUENTLY", "DAILY"),
+                gymFrequency
+            ) {
                 gymFrequency = it
             }
-        }
-
-        item {
-            OutlinedTextField(email, { email = it }, label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth())
-        }
-
-        item {
-            OutlinedTextField(password, { password = it }, label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth())
-        }
-
-        item {
-            OutlinedTextField(confirmPassword, { confirmPassword = it }, label = { Text("Confirm Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth())
         }
 
         item {
@@ -261,55 +335,42 @@ fun ProfileScreen() {
                         try {
                             val userId = userPrefs.userIdFlow.firstOrNull()
                             if (userId != null) {
-                                val updatedFields = mutableMapOf<String, Any>()
-
-                                if (name != originalState[0]) updatedFields["name"] = name.trim()
-                                if (age != originalState[1]) updatedFields["age"] = age.toIntOrNull() ?: 0
 
                                 val totalInches = (heightFeet.toIntOrNull() ?: 0) * 12 + (heightInches.toIntOrNull() ?: 0)
-                                val originalTotalInches = (originalState[2].toIntOrNull() ?: 0) * 12 + (originalState[3].toIntOrNull() ?: 0)
-                                if (totalInches != originalTotalInches) updatedFields["heightCm"] = totalInches
-
                                 val weightKg = (weightLbs.toFloatOrNull() ?: 0f) * 0.453592f
-                                val originalWeightKg = (originalState[4].toFloatOrNull() ?: 0f) * 0.453592f
-                                if (weightKg != originalWeightKg) updatedFields["weightKg"] = weightKg
-
-                                if (location != originalState[5]) updatedFields["location"] = location.trim()
-                                if (timePreference != originalState[7]) updatedFields["timePreference"] = timePreference
-                                if (experienceLevel != originalState[8]) updatedFields["experienceLevel"] = experienceLevel
-                                if (gymFrequency != originalState[9]) updatedFields["gymFrequency"] = gymFrequency
-
-                                if (password.isNotBlank() && password == confirmPassword) {
-                                    updatedFields["password"] = password
-                                }
 
                                 val updateRequest = UpdateUserRequest(
-                                    name = if (updatedFields.containsKey("name")) name.trim() else null,
-                                    age = if (updatedFields.containsKey("age")) age.toIntOrNull() else null,
-                                    heightCm = if (updatedFields.containsKey("heightCm")) totalInches else null,
-                                    weightKg = if (updatedFields.containsKey("weightKg")) weightKg else null,
-                                    location = if (updatedFields.containsKey("location")) location.trim() else null,
-                                    timePreference = if (updatedFields.containsKey("timePreference")) TimePreference.valueOf(timePreference) else null,
-                                    experienceLevel = if (updatedFields.containsKey("experienceLevel")) ExperienceLevel.valueOf(experienceLevel) else null,
-                                    gymFrequency = if (updatedFields.containsKey("gymFrequency")) GymFrequency.valueOf(gymFrequency) else null,
-                                    password = if (updatedFields.containsKey("password")) password else null
+                                    name = name.trim(),
+                                    age = age.toIntOrNull(),
+                                    heightCm = totalInches,
+                                    weightKg = weightKg,
+                                    location = location.trim(),
+                                    timePreference = TimePreference.valueOf(timePreference),
+                                    experienceLevel = ExperienceLevel.valueOf(experienceLevel),
+                                    gymFrequency = GymFrequency.valueOf(gymFrequency)
                                 )
 
-
-
-                                if (updatedFields.isNotEmpty()) {
+                                if (isChanged) {
                                     val response = ApiClient.getUserApi(context).updateUser(
                                         userId = userId,
                                         updateData = updateRequest
                                     )
-                                    println(response)
+                                    println("✅ API response: $response")
                                     println("✅ Profile update success")
+
+                                    originalState = listOf(
+                                        name, age, heightFeet, heightInches, weightLbs, location, email,
+                                        timePreference, experienceLevel, gymFrequency
+                                    )
                                 } else {
-                                    println("⚠️ No changes to update")
+                                    println("⚠️ No changes to update (skipping API call)")
                                 }
+                            } else {
+                                println("❌ No userId found — cannot send update")
                             }
                         } catch (e: Exception) {
                             println("❌ Profile update error: ${e.localizedMessage}")
+                            e.printStackTrace()
                         }
                     }
                 },
@@ -326,6 +387,7 @@ fun ProfileScreen() {
                 Text("Update Profile")
             }
         }
+
     }
 }
 

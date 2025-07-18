@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.network
 
+import WorkoutSessionApiService
 import android.content.Context
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -7,8 +8,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD
-//    private const val BASE_URL = "https://ff6a53c8c329.ngrok-free.app/api/" // DEV
+//    private const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD
+    private const val BASE_URL = "https://aa048e4eb64d.ngrok-free.app/api/" // DEV
 
     // Create Retrofit instance with AuthInterceptor
     private fun createRetrofit(context: Context): Retrofit {
@@ -45,5 +46,13 @@ object ApiClient {
 
     fun getMatchingApi(context: Context): MatchingApiService {
         return createRetrofit(context).create(MatchingApiService::class.java)
+    }
+
+    fun getWorkoutSessionApi(context: Context): WorkoutSessionApiService {
+        return createRetrofit(context).create(WorkoutSessionApiService::class.java)
+    }
+
+    fun getChatApi(context: Context): ChatApiService {
+        return createRetrofit(context).create(ChatApiService::class.java)
     }
 }

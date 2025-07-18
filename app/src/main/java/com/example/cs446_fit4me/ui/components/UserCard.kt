@@ -19,6 +19,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cs446_fit4me.model.UserMatch
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material3.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 
 @Composable
@@ -35,7 +46,8 @@ fun formatScore(score: Int): String {
 @Composable
 fun UserCard(
     match: MatchEntry,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onChatClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -68,7 +80,7 @@ fun UserCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Name (expands)
+            // Name and score (expands)
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -92,9 +104,24 @@ fun UserCard(
                 fontSize = 16.sp,
                 modifier = Modifier.padding(start = 16.dp)
             )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Chat icon button (rightmost)
+            IconButton(
+                onClick = onChatClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Chat,
+                    contentDescription = "Chat",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
+
 
 
 //@Preview(showBackground = true)

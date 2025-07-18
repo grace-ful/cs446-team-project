@@ -15,6 +15,11 @@ import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.network.ApiClient
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.example.cs446_fit4me.datastore.UserManager
+import kotlinx.coroutines.delay
+
+
 
 @Composable
 fun SignUpScreen(
@@ -74,7 +79,9 @@ fun SignUpScreen(
 
                 val response = ApiClient.getUserApi(context).signup(request)
                 TokenManager.saveToken(context, response.token)
+                UserManager.saveUserId(context, response.id)
                 userPrefs.saveUserId(response.id)
+                val res = ApiClient.getMatchingApi(context).updateMatches();
 
                 isLoading = false
                 onSignUpSuccess()
@@ -211,6 +218,7 @@ fun BasicSignupScreenContent(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileSetupScreenContent(
     age: String,
@@ -234,11 +242,15 @@ fun ProfileSetupScreenContent(
     onSubmit: () -> Unit
 ) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val placesClient = remember { com.google.android.libraries.places.api.Places.createClient(context) }
 
     var selectedCountry by remember { mutableStateOf("CA") }
     var cityQuery by remember { mutableStateOf("") }
     var cityPredictions by remember { mutableStateOf(listOf<String>()) }
+
+    var isDropdownExpanded by remember { mutableStateOf(false) }
+    var hasUserSelected by remember { mutableStateOf(false) }
 
     // Fetch city predictions on each query change
     LaunchedEffect(cityQuery) {
@@ -289,25 +301,70 @@ fun ProfileSetupScreenContent(
             selectedCountry = it
         }
 
-        // City input + dropdown
-        OutlinedTextField(
-            value = cityQuery,
-            onValueChange = { cityQuery = it },
-            label = { Text("City") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        LaunchedEffect(cityQuery) {
+            if (cityQuery.isNotBlank() && !hasUserSelected) {
+                delay(200)
+                val request = com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest.builder()
+                    .setCountries(listOf(selectedCountry))
+                    .setTypesFilter(listOf("locality"))
+                    .setQuery(cityQuery)
+                    .build()
 
-        // Show predictions
-        cityPredictions.forEach { prediction ->
-            DropdownMenuItem(
-                text = { Text(prediction) },
-                onClick = {
-                    cityQuery = prediction
-                    cityPredictions = listOf()
-                    onLocationChange("$prediction, $selectedCountry") // pass combined location back
-                }
-            )
+                placesClient.findAutocompletePredictions(request)
+                    .addOnSuccessListener { response ->
+                        cityPredictions = response.autocompletePredictions.map { it.getPrimaryText(null).toString() }
+                        isDropdownExpanded = cityPredictions.isNotEmpty()
+                    }
+                    .addOnFailureListener {
+                        cityPredictions = listOf()
+                        isDropdownExpanded = false
+                    }
+            }
         }
+
+        ExposedDropdownMenuBox(
+            expanded = isDropdownExpanded,
+            onExpandedChange = { isDropdownExpanded = it }
+        ) {
+            OutlinedTextField(
+                value = cityQuery,
+                onValueChange = {
+                    cityQuery = it
+                    hasUserSelected = false
+                },
+                label = { Text("City") },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                },
+                singleLine = true
+            )
+
+            ExposedDropdownMenu(
+                expanded = isDropdownExpanded,
+                onDismissRequest = { isDropdownExpanded = false }
+            ) {
+                cityPredictions.forEach { prediction ->
+                    DropdownMenuItem(
+                        text = { Text(prediction) },
+                        onClick = {
+                            cityQuery = prediction
+                            hasUserSelected = true
+                            isDropdownExpanded = false
+                            cityPredictions = listOf()
+                            onLocationChange("$prediction, $selectedCountry")
+                            keyboardController?.hide()  // ✅ hide keyboard after selection
+                        }
+                    )
+                }
+            }
+        }
+
+
+
+
 
         EnumDropdown("Time Preference", TimePreference.values().map { it.name }, timePreference.name) {
             onTimePrefChange(TimePreference.valueOf(it))

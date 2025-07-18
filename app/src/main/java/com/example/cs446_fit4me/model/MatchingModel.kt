@@ -1,3 +1,5 @@
+import com.example.cs446_fit4me.model.GymFrequency
+
 enum class TimePreference { MORNING, AFTERNOON, EVENING, NIGHT, NONE }
 enum class ExperienceLevel { BEGINNER, INTERMEDIATE, ADVANCED, ATHLETE, COACH }
 enum class GymFrequency { NEVER, RARELY, OCCASIONALLY, REGULARLY, FREQUENTLY, DAILY }
