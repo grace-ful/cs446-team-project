@@ -75,8 +75,7 @@ fun MatchingScreenPreview() {
     )
     val match = MatchEntry("abc", "def", 90f, matchee)
     CS446fit4meTheme {
-        MatchingScreen(
-            matches = listOf(match)
-        )
+        MatchingScreen(matches = listOf(match))
+
     }
 }

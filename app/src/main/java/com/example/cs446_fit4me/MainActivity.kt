@@ -28,6 +28,7 @@ import com.google.android.libraries.places.api.Places
 class MainActivity : ComponentActivity() {
     private var showMain by mutableStateOf(false)
     private var currentScreen by mutableStateOf("login")
+    private var resetKey by mutableStateOf(0) // ← NEW
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -55,12 +56,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CS446fit4meTheme {
-                AppEntryPoint(
-                    showMain = showMain,
-                    currentScreen = currentScreen,
-                    onShowMainChanged = { showMain = it },
-                    onCurrentScreenChanged = { currentScreen = it }
-                )
+                key(resetKey) {
+                    AppEntryPoint(
+                        showMain = showMain,
+                        currentScreen = currentScreen,
+                        onShowMainChanged = { showMain = it },
+                        onCurrentScreenChanged = { currentScreen = it },
+                        onResetApp = { resetKey++ }
+                    )
+                }
             }
         }
     }

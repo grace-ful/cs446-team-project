@@ -160,6 +160,7 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
                                 try {
                                     TokenManager.clearToken(context = navController.context)
                                     onLogout()
+
                                 } catch (e: Exception) {
                                     println("Logout failed: ${e.message}")
                                 }
