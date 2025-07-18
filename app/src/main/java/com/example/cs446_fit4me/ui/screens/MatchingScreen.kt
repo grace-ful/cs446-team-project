@@ -70,20 +70,18 @@ fun MatchingScreen(
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun MatchingScreenPreview() {
-//    val matchee = MatcheeUser(
-//        "123", "John Doe", 25, 170f, 70f, "New York",
-//        timePreference = TimePreference.MORNING,
-//        experienceLevel = ExperienceLevel.BEGINNER,
-//        gymFrequency = GymFrequency.NEVER
-//    )
-//    val match = MatchEntry("abc", "def", 90f, matchee)
-//    CS446fit4meTheme {
-//        MatchingScreen(
-//            matches = listOf(match),
-//            navController = rememberNavController()
-//        )
-//    }
-//}
+@Preview(showBackground = true)
+@Composable
+fun MatchingScreenPreview() {
+    val matchee = MatcheeUser(
+        "123", "John Doe", 25, 170f, 70f, "New York",
+        timePreference = TimePreference.MORNING,
+        experienceLevel = ExperienceLevel.BEGINNER,
+        gymFrequency = GymFrequency.NEVER
+    )
+    val match = MatchEntry("abc", "def", 90f, matchee)
+    CS446fit4meTheme {
+        MatchingScreen(matches = listOf(match))
+
+    }
+}

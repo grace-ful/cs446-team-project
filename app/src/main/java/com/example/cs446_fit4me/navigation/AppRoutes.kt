@@ -15,4 +15,17 @@ object AppRoutes {
     const val SELECT_EXERCISE = "select_exercise"
     const val WORKOUT_SESSION = "workout_session"
     const val LOGOUT = "logout"
+
+    // Settings Subscreens ✅
+    const val EDIT_ACCOUNT_INFO = "settings/edit_account"
+    const val CHANGE_PASSWORD = "settings/change_password"
+    const val NOTIFICATION_SETTINGS = "settings/notification_settings"
+    const val REMIND_ME = "settings/remind_me"
+    const val UNITS = "settings/units"
+    const val ACCESSIBILITY = "settings/accessibility"
+    const val PROFILE_VISIBILITY = "settings/profile_visibility"
+    const val MATCHING_PREFERENCES = "settings/matching_preferences"
+    const val WORKOUT_HISTORY = "settings/workout_history"
+    const val RATE = "settings/rate"
+    const val HELP_SUPPORT = "settings/help_support"
 }

@@ -1,30 +1,16 @@
 package com.example.cs446_fit4me.ui.screens
 
 import android.util.Log
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -36,23 +22,27 @@ import androidx.navigation.compose.rememberNavController
 import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import com.example.cs446_fit4me.datastore.TokenManager
+import com.example.cs446_fit4me.navigation.AppRoutes
 
-// Sealed class for navigation routes (as defined in step 1)
-sealed class SettingsScreen(val route: String) {
-    object EditAccountInfo : SettingsScreen("settings_main")
-    object ChangePassword : SettingsScreen("account_settings")
-    object NotificationSettings: SettingsScreen("notification_settings")
-    object RemindMe: SettingsScreen("remind_me")
-    object Units: SettingsScreen("units")
-    object Accessibility: SettingsScreen("accessibility")
-    object ProfileVisibility: SettingsScreen("profile_visibility")
-    object MatchingPreferences: SettingsScreen("matching_preferences")
-    object WorkoutHistory: SettingsScreen("workout_history")
-    object Rate: SettingsScreen("rate")
-    object HelpSupport: SettingsScreen("help_support")
-    object Logout: SettingsScreen("logout")
-    object DeleteAccount: SettingsScreen("delete_account")
-    // Add others as needed, e.g., Logout
+// Sealed class for all setting items
+sealed class SettingsItemEntry(
+    val label: String,
+    val route: String? = null,
+    val isDangerous: Boolean = false
+) {
+    object EditAccountInfo : SettingsItemEntry("Edit Account Info", AppRoutes.EDIT_ACCOUNT_INFO)
+    object ChangePassword : SettingsItemEntry("Change Password", AppRoutes.CHANGE_PASSWORD)
+    object NotificationSettings : SettingsItemEntry("Notification Settings", AppRoutes.NOTIFICATION_SETTINGS)
+    object RemindMe : SettingsItemEntry("Remind Me", AppRoutes.REMIND_ME)
+    object Units : SettingsItemEntry("Units", AppRoutes.UNITS)
+    object Accessibility : SettingsItemEntry("Accessibility", AppRoutes.ACCESSIBILITY)
+    object ProfileVisibility : SettingsItemEntry("Profile Visibility", AppRoutes.PROFILE_VISIBILITY)
+    object MatchingPreferences : SettingsItemEntry("Matching Preferences", AppRoutes.MATCHING_PREFERENCES)
+    object WorkoutHistory : SettingsItemEntry("Workout History", AppRoutes.WORKOUT_HISTORY)
+    object Rate : SettingsItemEntry("Rate", AppRoutes.RATE)
+    object HelpSupport : SettingsItemEntry("Help Center", AppRoutes.HELP_SUPPORT)
+    object Logout : SettingsItemEntry("Logout", isDangerous = true)
+    object DeleteAccount : SettingsItemEntry("Delete Account", isDangerous = true)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,9 +51,48 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
     var searchQuery by remember { mutableStateOf("") }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
+    val settingsSections = listOf(
+        "ACCOUNT SETTINGS" to listOf(
+            SettingsItemEntry.EditAccountInfo,
+            SettingsItemEntry.ChangePassword
+        ),
+        "NOTIFICATIONS" to listOf(
+            SettingsItemEntry.NotificationSettings,
+            SettingsItemEntry.RemindMe
+        ),
+        "APPEARANCE" to listOf(
+            SettingsItemEntry.Units,
+            SettingsItemEntry.Accessibility
+        ),
+        "PRIVACY" to listOf(
+            SettingsItemEntry.ProfileVisibility,
+            SettingsItemEntry.MatchingPreferences,
+            SettingsItemEntry.WorkoutHistory
+        ),
+        "SUPPORT" to listOf(
+            SettingsItemEntry.Rate,
+            SettingsItemEntry.HelpSupport
+        ),
+        "DANGER ZONE" to listOf(
+            SettingsItemEntry.Logout,
+            SettingsItemEntry.DeleteAccount
+        )
+    )
+
+    val filteredSections = settingsSections.mapNotNull { (header, items) ->
+        val filteredItems = items.filter {
+            it.label.contains(searchQuery, ignoreCase = true)
+        }
+        if (filteredItems.isNotEmpty()) header to filteredItems else null
+    }
+
     Scaffold(
         topBar = {
-            TopBar(title = "Settings", canNavigateBack = true, onNavigateUp = { navController.popBackStack() })
+            TopBar(
+                title = "Settings",
+                canNavigateBack = true,
+                onNavigateUp = { navController.popBackStack() }
+            )
         }
     ) { paddingValues ->
         Column(
@@ -78,7 +107,10 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 leadingIcon = {
-                    Icon(imageVector = Icons.Filled.Search, contentDescription = "Search Icon")
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = "Search Icon"
+                    )
                 },
                 placeholder = { Text("Search settings") },
                 modifier = Modifier
@@ -91,64 +123,28 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
                 )
             )
 
-            // ACCOUNT SETTINGS
-            SettingsSectionHeader("ACCOUNT SETTINGS")
-            SettingsItem("Edit Account Info") {
-                //navController.navigate(SettingsScreen.EditAccountInfo.route)
-            }
-            SettingsItem("Change Password") {
-                //navController.navigate(SettingsScreen.ChangePassword.route) // Add this route if needed
-            }
-
-            // NOTIFICATIONS
-            SettingsSectionHeader("NOTIFICATIONS")
-            SettingsItem("Notification Settings") {
-                //navController.navigate(SettingsScreen.NotificationSettings.route)
-            }
-            SettingsItem("Remind Me") {
-                //navController.navigate(SettingsScreen.RemindMe.route) // Add this route if needed
-            }
-
-            // APPEARANCE
-            SettingsSectionHeader("APPEARANCE")
-            SettingsItem("Units") {
-                //navController.navigate(SettingsScreen.Units.route)
-            }
-            SettingsItem("Accessibility") {
-                //navController.navigate(SettingsScreen.Accessibility.route)
-            }
-
-            // PRIVACY
-            SettingsSectionHeader("PRIVACY")
-            SettingsItem("Profile Visibility") {
-                //navController.navigate(SettingsScreen.ProfileVisibility.route)
-            }
-            SettingsItem("Matching Preferences") {
-                //navController.navigate(SettingsScreen.MatchingPreferences.route)
-            }
-            SettingsItem("Workout History") {
-                //navController.navigate(SettingsScreen.WorkoutHistory.route)
-            }
-
-            // SUPPORT
-            SettingsSectionHeader("SUPPORT")
-            SettingsItem("Rate") {
-                //navController.navigate(SettingsScreen.Rate.route)
-            }
-            SettingsItem("Help Center") {
-                //navController.navigate(SettingsScreen.HelpSupport.route)
-            }
-
-            // DANGER ZONE
-            SettingsSectionHeader("DANGER ZONE")
-            SettingsItem("Logout", textStyle = TextStyle(color = MaterialTheme.colorScheme.error)) {
-                showLogoutDialog = true
-                //navController.navigate(SettingsScreen.Logout.route)
-            }
-            SettingsItem("Delete Account", textStyle = TextStyle(color = MaterialTheme.colorScheme.error)) {
-                //navController.navigate(SettingsScreen.DeleteAccount.route)
+            // Render Sections Dynamically
+            filteredSections.forEach { (sectionTitle, items) ->
+                SettingsSectionHeader(sectionTitle)
+                items.forEach { item ->
+                    SettingsItem(
+                        text = item.label,
+                        isDangerous = item.isDangerous,
+                        onClick = {
+                            when (item) {
+                                SettingsItemEntry.Logout -> showLogoutDialog = true
+                                SettingsItemEntry.DeleteAccount -> {
+                                    // TODO: Implement delete confirmation dialog
+                                }
+                                else -> item.route?.let { navController.navigate(it) }
+                            }
+                        }
+                    )
+                }
             }
         }
+
+        // Logout Dialog
         if (showLogoutDialog) {
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
@@ -164,8 +160,9 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
                                 try {
                                     TokenManager.clearToken(context = navController.context)
                                     onLogout()
+
                                 } catch (e: Exception) {
-                                    println("Settings Screen - Logout navigation failed: ${e.message}")
+                                    println("Logout failed: ${e.message}")
                                 }
                             },
                         color = MaterialTheme.colorScheme.primary
@@ -176,63 +173,68 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
                         "No",
                         modifier = Modifier
                             .padding(8.dp)
-                            .clickable {
-                                showLogoutDialog = false
-                            },
+                            .clickable { showLogoutDialog = false },
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
             )
         }
-
     }
 }
-
 
 @Composable
 fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelLarge.copy(
-            fontSize = 14.sp
-        ),
+        style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier
-            .padding(top = 24.dp, bottom = 8.dp)
+        modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
     )
 }
 
 @Composable
-fun SettingsItem(text: String, textStyle: TextStyle? = null, onClick: () -> Unit) {
+fun SettingsItem(
+    text: String,
+    isDangerous: Boolean = false,
+    onClick: () -> Unit
+) {
+    val borderColor = if (isDangerous) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 16.dp),
+            .padding(vertical = 8.dp)
+            .then(
+                if (isDangerous)
+                    Modifier
+                        .border(1.dp, borderColor, shape = MaterialTheme.shapes.small)
+                        .padding(12.dp)
+                else Modifier
+            )
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = text,
-            style = textStyle ?: MaterialTheme.typography.bodyLarge,
             fontSize = 16.sp,
+            color = if (isDangerous) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-            contentDescription = "Navigate to $text",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (!isDangerous) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = "Navigate to $text",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
 fun SettingsMainScreenPreview() {
     CS446fit4meTheme {
-        // You need a NavController for the preview, use rememberNavController
         val navController = rememberNavController()
         SettingsMainScreen(navController = navController)
     }
 }
-
