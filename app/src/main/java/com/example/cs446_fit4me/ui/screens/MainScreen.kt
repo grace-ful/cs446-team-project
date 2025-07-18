@@ -33,7 +33,6 @@ import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.ui.workout.CreateWorkoutScreen
 import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
 import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
-import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")

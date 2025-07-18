@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -81,7 +82,7 @@ fun MatchingScreenPreview() {
     )
     val match = MatchEntry("abc", "def", 90f, matchee)
     CS446fit4meTheme {
-        MatchingScreen(matches = listOf(match))
+        MatchingScreen(matches = listOf(match), navController = NavController(LocalContext.current))
 
     }
 }
