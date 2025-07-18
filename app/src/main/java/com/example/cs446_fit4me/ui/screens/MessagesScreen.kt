@@ -1,29 +1,60 @@
 package com.example.cs446_fit4me.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import ConversationUserCard
+import MessagesViewModel
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
+import com.example.cs446_fit4me.model.UserResponse
 
 @Composable
-fun MessagesScreen(navController: NavController? = null) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Welcome to the Messages Screen!")
+fun MessagesScreen(
+    navController: NavController,
+    viewModel: MessagesViewModel = viewModel()
+) {
+    val users = viewModel.users
+    val isLoading = viewModel.isLoading
+    val error = viewModel.error
+
+    // Automatically load conversations on first launch
+    LaunchedEffect(Unit) {
+        viewModel.loadConversations()
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun MessagesPreview() {
-    CS446fit4meTheme {
-        MessagesScreen()
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            isLoading -> {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
+            }
+            error != null -> {
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(users) { user ->
+                        ConversationUserCard(
+                            user = user,
+                            onChatClick = { navController.navigate("chat/${user.id}") }
+                        )
+                    }
+                }
+            }
+        }
     }
 }

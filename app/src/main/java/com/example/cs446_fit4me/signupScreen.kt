@@ -16,6 +16,7 @@ import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.network.ApiClient
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.example.cs446_fit4me.datastore.UserManager
 import kotlinx.coroutines.delay
 
 
@@ -78,7 +79,9 @@ fun SignUpScreen(
 
                 val response = ApiClient.getUserApi(context).signup(request)
                 TokenManager.saveToken(context, response.token)
+                UserManager.saveUserId(context, response.id)
                 userPrefs.saveUserId(response.id)
+                val res = ApiClient.getMatchingApi(context).updateMatches();
 
                 isLoading = false
                 onSignUpSuccess()
