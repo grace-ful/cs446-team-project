@@ -2,16 +2,16 @@
 package com.example.cs446_fit4me.chat
 
 import com.example.cs446_fit4me.model.ChatMessage
+import com.example.cs446_fit4me.network.ApiClient.BASE_URL
 import io.socket.client.IO
-import io.socket.client.Socket
 import org.json.JSONObject
 
 class ChatSocketManager(serverUrl: String, val userId: String) {
-    val socket: Socket = IO.socket("https://aa048e4eb64d.ngrok-free.app")
+    val socket: io.socket.client.Socket? = IO.socket(BASE_URL)
 
     fun connect() {
-        socket.connect()
-        socket.emit("join", userId)
+        socket?.connect()
+        socket?.emit("join", userId)
     }
 
     fun sendMessage(message: ChatMessage) {
@@ -20,11 +20,11 @@ class ChatSocketManager(serverUrl: String, val userId: String) {
             put("receiverId", message.receiverId)
             put("content", message.content)
         }
-        socket.emit("send_message", json)
+        socket?.emit("send_message", json)
     }
 
     fun setOnMessageReceived(onReceived: (ChatMessage) -> Unit) {
-        socket.on("receive_message") { args ->
+        socket?.on("receive_message") { args ->
             val data = args[0] as JSONObject
             val msg = ChatMessage(
                 id = data.optString("id"),
@@ -38,6 +38,8 @@ class ChatSocketManager(serverUrl: String, val userId: String) {
     }
 
     fun disconnect() {
-        socket.disconnect()
+        socket?.disconnect()
     }
 }
+
+
