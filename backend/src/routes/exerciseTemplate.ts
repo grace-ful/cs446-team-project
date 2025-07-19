@@ -70,7 +70,7 @@ exerciseTemplateRouter.post(
 	async (req: AuthRequest, res: Response): Promise<any> => {
 		console.log(req.body);
 		const userId = req.userId;
-		const { name, muscleGroup, bodyPart, isGeneral, imageURL, equipment } = req.body;
+		const { name, muscleGroup, bodyPart, isGeneral, imageURL, equipment, description } = req.body;
 		console.log(`userId = ${userId}`);
 
 		if (!name || !muscleGroup || !bodyPart || isGeneral === undefined) {
@@ -104,6 +104,7 @@ exerciseTemplateRouter.post(
 					imageURL,
 					userId,
 					equipment,
+					description
 				},
 			});
 
@@ -116,7 +117,7 @@ exerciseTemplateRouter.post(
 
 // UPDATE a template
 exerciseTemplateRouter.put("/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
-	const { name, muscleGroup, bodyPart, imageURL, isGeneral, equipment } = req.body;
+	const { name, muscleGroup, bodyPart, imageURL, isGeneral, equipment, description } = req.body;
 
 	const userId = req.userId;
 
@@ -129,7 +130,8 @@ exerciseTemplateRouter.put("/:id", authMiddleware, async (req: AuthRequest, res:
 				bodyPart,
 				imageURL,
 				isGeneral,
-				equipment
+				equipment,
+				description
 			},
 		});
 

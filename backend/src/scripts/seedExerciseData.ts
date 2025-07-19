@@ -29,6 +29,8 @@ async function main() {
     },
   });
 
+  await prisma.exerciseSet.deleteMany({});
+
   await prisma.exerciseSession.deleteMany({
   where: {
     exerciseTemplate: {
@@ -69,6 +71,7 @@ async function main() {
           imageURL: item.imageURL ?? null,
           isGeneral: item.isGeneric ?? true,
           userId: null,
+          description: item.description ?? null,
         },
       });
     } catch (error: any) {
