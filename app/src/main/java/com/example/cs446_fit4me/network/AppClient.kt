@@ -8,8 +8,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-     const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD
-//   const val BASE_URL = "https://aa048e4eb64d.ngrok-free.app/api/" // DEV
+    const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD
+    const val SOCKET_URL = "https://cs446-team-project-production.up.railway.app" // PROD
+//  const val BASE_URL = "https://aa048e4eb64d.ngrok-free.app/api/" // DEV
+//  const val SOCKET_URL = "https://aa048e4eb64d.ngrok-free.app" // DEV
 
     // Create Retrofit instance with AuthInterceptor
     private fun createRetrofit(context: Context): Retrofit {

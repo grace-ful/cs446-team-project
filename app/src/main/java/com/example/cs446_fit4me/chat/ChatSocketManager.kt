@@ -2,12 +2,13 @@
 package com.example.cs446_fit4me.chat
 
 import com.example.cs446_fit4me.model.ChatMessage
-import com.example.cs446_fit4me.network.ApiClient.BASE_URL
+import com.example.cs446_fit4me.network.ApiClient.SOCKET_URL
 import io.socket.client.IO
 import org.json.JSONObject
 
 class ChatSocketManager(serverUrl: String, val userId: String) {
-    val socket: io.socket.client.Socket? = IO.socket(BASE_URL)
+
+    val socket: io.socket.client.Socket? = IO.socket(SOCKET_URL);
 
     fun connect() {
         socket?.connect()
