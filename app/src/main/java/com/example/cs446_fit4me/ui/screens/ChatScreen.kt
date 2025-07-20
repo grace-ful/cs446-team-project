@@ -1,11 +1,15 @@
 package com.example.cs446_fit4me.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -101,25 +105,42 @@ fun ChatScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             TextField(
                 value = text,
                 onValueChange = { text = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Type a message...") }
+                placeholder = { Text("Type a message...") },
+                singleLine = true
             )
-            Button(
-                onClick = {
-                    if (text.isNotBlank()) {
+
+            if (text.isNotBlank()) {
+                // Send button with green circle
+                IconButton(
+                    onClick = {
                         onSend(text)
                         text = ""
-                    }
+                    },
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(48.dp) // Match WhatsApp style
+                        .background(
+                            color = Color(0xff5c4896), // WhatsApp green
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send",
+                        tint = Color.White
+                    )
                 }
-            ) {
-                Text("Send")
             }
         }
+
+
     }
 }
 
