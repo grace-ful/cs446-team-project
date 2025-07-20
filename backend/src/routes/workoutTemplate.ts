@@ -50,6 +50,24 @@ workoutTemplateRouter.get('/by-user/:userId', authMiddleware, async (req: AuthRe
     }
 });
 
+// DELETE a workout template by ID
+workoutTemplateRouter.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+    console.log(`Received DELETE request for workout template with id: ${id}`);
+
+  try {
+    // Want to check if the user owns this workout template
+    await prisma.workoutTemplate.delete({
+      where: { id },
+    });
+    res.status(204).send(); // No content, success
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete workout template' });
+  }
+});
+
+
 workoutTemplateRouter.post('/add', authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
   try {
     const { name, isGeneral, exerciseIds } = req.body;
@@ -111,6 +129,26 @@ workoutTemplateRouter.put('/:id/add-exercises', authMiddleware, async (req: Auth
     res.status(500).json({ error: 'Failed to add exercises to workout template' });
   }
 });
+
+workoutTemplateRouter.put('/:id/update-name', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || typeof name !== "string") {
+    res.status(400).json({ error: 'name is required' });
+    return;
+  }
+  try {
+    const updatedTemplate = await prisma.workoutTemplate.update({
+      where: { id },
+      data: { name },
+      include: { exercises: true }
+    });
+    res.status(200).json(updatedTemplate);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update workout template name' });
+  }
+});
+
 
 workoutTemplateRouter.delete('/:id/remove-exercise', authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
   const { id } = req.params;
