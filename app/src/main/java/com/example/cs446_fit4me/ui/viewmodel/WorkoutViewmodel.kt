@@ -63,7 +63,6 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-
     var workoutName by mutableStateOf("")
         private set
 
@@ -91,10 +90,11 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-    fun fetchUserWorkouts(context: Context) {
+
+    fun fetchUserWorkouts(context: Context, userId: String) {
         viewModelScope.launch {
             try {
-                val response = ApiClient.getWorkoutApi(context).getUserWorkouts();
+                val response = ApiClient.getWorkoutApi(context).getUserWorkouts(userId)
                 Log.d("WorkoutViewModel", "Received ${response.size} user workouts from backend.")
                 _myWorkouts.clear()
                 _myWorkouts.addAll(response.map { it.toWorkoutModel() })
@@ -180,7 +180,7 @@ class WorkoutViewModel : ViewModel() {
         }
         */
     }
-    
+
     fun startWorkoutSessionFromTemplate(
         context: Context,
         templateId: String,

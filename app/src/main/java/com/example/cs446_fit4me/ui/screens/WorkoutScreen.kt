@@ -41,10 +41,13 @@ fun WorkoutScreen(
     var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }
     var selectedStandardWorkoutName by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userId) {
         workoutViewModel.fetchStandardWorkouts(context)
-        workoutViewModel.fetchUserWorkouts(context)
+        userId?.let {
+            workoutViewModel.fetchUserWorkouts(context, it)
+        } ?: Log.e("WorkoutScreen", "UserId is null; cannot fetch user workouts")
     }
+
 
     var previewWorkout by remember { mutableStateOf<WorkoutModel?>(null) }
     var previewIsCustom by remember { mutableStateOf(false) }
