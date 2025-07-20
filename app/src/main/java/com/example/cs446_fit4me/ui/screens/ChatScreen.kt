@@ -1,47 +1,108 @@
-// com.example.cs446_fit4me.ui.chat.ChatScreen
-package com.example.cs446_fit4me.ui.chat
+package com.example.cs446_fit4me.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cs446_fit4me.model.ChatMessage
+import com.example.cs446_fit4me.ui.components.TopBar
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     messages: List<ChatMessage>,
     onSend: (String) -> Unit,
-    currentUserId: String
+    currentUserId: String,
+    onBack: () -> Unit
 ) {
     var text by remember { mutableStateOf("") }
-    Column(modifier = Modifier.fillMaxSize()) {
+    val listState = rememberLazyListState()
+
+    // Scroll to bottom on message change
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(0)
+        }
+    }
+
+    // Group messages by date string
+    val groupedMessages = messages
+        .sortedBy { it.createdAt }
+        .groupBy { formatDateHeader(it.createdAt) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+    ) {
+        TopBar(
+            title = "Chat",
+            canNavigateBack = true,
+            onNavigateUp = onBack
+        )
+
         LazyColumn(
             modifier = Modifier.weight(1f).padding(8.dp),
-            reverseLayout = true
+            reverseLayout = true,
+            state = listState
         ) {
-            items(messages.reversed()) { msg ->
-                Row(
-                    horizontalArrangement = if (msg.senderId == currentUserId) Arrangement.End else Arrangement.Start,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Surface(
-                        color = if (msg.senderId == currentUserId) Color.Blue else Color.Gray,
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.padding(4.dp)
+            groupedMessages.entries.reversed().forEach { (dateLabel, messagesForDate) ->
+                item {
+                    Text(
+                        text = dateLabel,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray
+                    )
+                }
+
+                items(messagesForDate.reversed(), key = { it.id ?: it.hashCode() }) { msg ->
+                    val isCurrentUser = msg.senderId == currentUserId
+                    Row(
+                        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
                     ) {
-                        Text(
-                            text = msg.content,
-                            color = Color.White,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                        Surface(
+                            color = if (isCurrentUser) Color.Blue else Color.Gray,
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Text(
+                                    text = msg.content,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = formatTime(msg.createdAt),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -64,5 +125,76 @@ fun ChatScreen(
                 Text("Send")
             }
         }
+    }
+}
+
+// Parses ISO string to ZonedDateTime
+private fun parseZonedDateTime(dateStr: String): ZonedDateTime {
+    return ZonedDateTime.parse(dateStr, DateTimeFormatter.ISO_DATE_TIME)
+}
+
+// Format like WhatsApp: "Today", "Yesterday", "Monday", or "Apr 12"
+private fun formatDateHeader(dateStr: String): String {
+    val date = parseZonedDateTime(dateStr)
+    val now = ZonedDateTime.now()
+    val today = now.toLocalDate()
+    val msgDate = date.toLocalDate()
+
+    return when {
+        msgDate.isEqual(today) -> "Today"
+        msgDate.isEqual(today.minusDays(1)) -> "Yesterday"
+        msgDate.isAfter(today.minusDays(6)) -> msgDate.dayOfWeek.name.lowercase()
+            .replaceFirstChar { it.uppercase() }
+        else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
+    }
+}
+
+// Format time like "4:30 PM"
+private fun formatTime(dateStr: String): String {
+    val date = parseZonedDateTime(dateStr)
+    return date.format(DateTimeFormatter.ofPattern("h:mm a"))
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ChatScreenPreview() {
+    val sampleMessages = listOf(
+        ChatMessage(
+            id = "1",
+            senderId = "user1",
+            receiverId = "user2",
+            content = "Hey! How are you doing?",
+            createdAt = "2025-07-20T10:00:00Z"
+        ),
+        ChatMessage(
+            id = "2",
+            senderId = "user2",
+            receiverId = "user1",
+            content = "I'm doing great, thanks! What about you?",
+            createdAt = "2025-07-20T10:01:00Z"
+        ),
+        ChatMessage(
+            id = "3",
+            senderId = "user1",
+            receiverId = "user2",
+            content = "Awesome! Just finished a workout 💪",
+            createdAt = "2025-07-19T09:02:00Z"
+        ),
+        ChatMessage(
+            id = "4",
+            senderId = "user1",
+            receiverId = "user2",
+            content = "Awesome! Just finished a workout 💪",
+            createdAt = "2025-07-06T09:02:00Z"
+        )
+    )
+
+    MaterialTheme {
+        ChatScreen(
+            messages = sampleMessages,
+            onSend = {},
+            currentUserId = "user1",
+            onBack = {}
+        )
     }
 }

@@ -23,7 +23,7 @@ import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
 import com.example.cs446_fit4me.network.ApiClient
-import com.example.cs446_fit4me.ui.chat.ChatScreen
+import com.example.cs446_fit4me.ui.screens.ChatScreen
 import com.example.cs446_fit4me.ui.chat.ChatViewModel
 import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
@@ -281,7 +281,8 @@ fun MainScreen(onLogout: () -> Unit) {
                 ChatScreen(
                     messages = messages,
                     onSend = { viewModel.sendMessage(it) },
-                    currentUserId = currentUserId
+                    currentUserId = currentUserId,
+                    onBack = { navController.navigateUp() }
                 )
             }
             composable(AppRoutes.EDIT_ACCOUNT_INFO) { EditAccountInfoScreen(navController) }
