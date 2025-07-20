@@ -25,6 +25,7 @@ data class ExerciseTemplate(
     val muscleGroup: String,
     val bodyPart: String,
     val equipment: String,
+    val description: String? = null,
     val isGeneral: Boolean,
     val imageURL: String?,
     val userId: String?,
@@ -41,14 +42,17 @@ fun ExerciseTemplate.toExercise(): Exercise {
     return Exercise(
         id = this.id,
         name = name,
-        muscleGroup = muscleGroup.toMuscleGroupOrNull() ?: MuscleGroup.OTHER, // fallback
+        muscleGroup = muscleGroup.toMuscleGroupOrNull() ?: MuscleGroup.OTHER,
         equipment = equipment.toEquipmentOrNull() ?: Equipment.NONE,
         bodyPart = bodyPart.toBodyPartOrNull() ?: BodyPart.OTHER,
-        description = "",
+        description = description ?: "",
         isGeneric = isGeneral,
-        imageUrl = imageURL
+        imageUrl = imageURL,
+        userId = userId,
+        createdAt = createdAt
     )
 }
+
 
 
 data class CreateExerciseRequest(

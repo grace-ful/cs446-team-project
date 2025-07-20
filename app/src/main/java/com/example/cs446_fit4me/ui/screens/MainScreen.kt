@@ -35,6 +35,7 @@ import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
 import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
 
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
@@ -240,6 +241,15 @@ fun MainScreen(onLogout: () -> Unit) {
                     onNavigateToSignUp = { currentScreen = "signup" }
                 )
             }
+
+            composable(
+                "${AppRoutes.EXERCISE_DETAIL}/{exerciseId}",
+                arguments = listOf(navArgument("exerciseId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: ""
+                ExerciseDetailScreen(exerciseId = exerciseId, navController = navController)
+            }
+
 
             // CHAT SCREEN - single peer chat
             composable(
