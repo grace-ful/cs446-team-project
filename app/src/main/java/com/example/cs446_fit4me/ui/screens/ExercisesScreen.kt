@@ -1,6 +1,5 @@
 package com.example.cs446_fit4me.ui.screens
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -35,15 +34,14 @@ import com.example.cs446_fit4me.model.ExerciseTemplate
 import com.example.cs446_fit4me.model.MuscleGroup
 import com.example.cs446_fit4me.model.toExercise
 import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import android.util.Log
 import androidx.compose.material3.HorizontalDivider
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.cs446_fit4me.datastore.dataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -52,11 +50,9 @@ import kotlinx.coroutines.flow.map
 @Composable
 fun ExercisesScreen(navController: NavController? = null) {
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferencesManager(context) }
-    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
 
     var searchText by remember { mutableStateOf("") }
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     var bodyPartDropdownExpanded by remember { mutableStateOf(false) }
     var selectedBodyParts by remember { mutableStateOf(setOf<BodyPart>()) }
@@ -307,7 +303,10 @@ fun ExercisesScreen(navController: NavController? = null) {
                 onDeleteClick = { toDelete ->
                     myExercises = myExercises.filter { it.id != toDelete.id }
                 },
-                isEditable = selectedTabIndex == 1
+                isEditable = selectedTabIndex == 1,
+                onInfoClick = { exercise ->
+                    navController?.navigate("${AppRoutes.EXERCISE_DETAIL}/${exercise.id}")
+                }
             )
         }
 
@@ -347,8 +346,6 @@ fun CreateExerciseModal(
     onExerciseUpdated: (Exercise) -> Unit
 ) {
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferencesManager(context) }
-    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
 
     var name by remember { mutableStateOf(initialExercise?.name ?: "") }
     //var name by remember { mutableStateOf("") }
@@ -489,7 +486,7 @@ fun CreateExerciseModal(
                                         userId = initialExercise.userId
                                     )
                                     val updated = ApiClient.getExerciseApi(context).updateExercise(initialExercise.id, updatedTemplate)
-                                    onExerciseUpdated(updated.toExercise());
+                                    onExerciseUpdated(updated.toExercise())
                                 } else {
                                     val req = CreateExerciseRequest(
                                         name = name,
@@ -529,17 +526,21 @@ fun CreateExerciseModal(
 
 
 @Composable
-fun ExercisesList(exercises: List<Exercise>,
-                  modifier: Modifier = Modifier,
-                  onEditClick: (Exercise) -> Unit = {},
-                  onDeleteClick: (Exercise) -> Unit = {},
-                  isEditable: Boolean = false) {
+fun ExercisesList(
+    exercises: List<Exercise>,
+    modifier: Modifier = Modifier,
+    onEditClick: (Exercise) -> Unit = {},
+    onDeleteClick: (Exercise) -> Unit = {},
+    isEditable: Boolean = false,
+    onInfoClick: (Exercise) -> Unit = {} // NEW: info click
+) {
     LazyColumn(modifier = modifier) {
         itemsIndexed(exercises) { index, exercise ->
             ExerciseListItem(
                 exercise = exercise,
                 onEditClick = if (isEditable && !exercise.isGeneric) { { onEditClick(exercise) } } else null,
-                onDeleteClick = if (isEditable && !exercise.isGeneric) { { onDeleteClick(exercise) } } else null
+                onDeleteClick = if (isEditable && !exercise.isGeneric) { { onDeleteClick(exercise) } } else null,
+                onInfoClick = if (!isEditable) { { onInfoClick(exercise) } } else null // pass only if in preset mode
             )
             if (index < exercises.size - 1) {
                 HorizontalDivider(
@@ -551,6 +552,8 @@ fun ExercisesList(exercises: List<Exercise>,
         }
     }
 }
+
+
 
 @Composable
 fun FilterButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {

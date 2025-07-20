@@ -3,7 +3,10 @@ package com.example.cs446_fit4me.ui.screens
 import MessagesViewModel
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -23,7 +26,7 @@ import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
 import com.example.cs446_fit4me.network.ApiClient
-import com.example.cs446_fit4me.ui.chat.ChatScreen
+import com.example.cs446_fit4me.ui.screens.ChatScreen
 import com.example.cs446_fit4me.ui.chat.ChatViewModel
 import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
@@ -34,6 +37,7 @@ import com.example.cs446_fit4me.ui.workout.CreateWorkoutScreen
 import com.example.cs446_fit4me.ui.workout.SelectExerciseScreen
 import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -91,9 +95,9 @@ fun MainScreen(onLogout: () -> Unit) {
 
     Scaffold(
         topBar = {
-            if (bottomNavItems.any { it.route == currentRoute }) {
+            if (bottomNavItems.any { it.route == currentRoute } || currentRoute.startsWith("chat/")) {
                 TopBar(
-                    title = currentScreenTitle,
+                    title = if (currentRoute.startsWith("chat/")) "Chat" else currentScreenTitle,
                     canNavigateBack = canNavigateBack,
                     onNavigateUp = { navController.navigateUp() },
                     onSettingsClick = if (currentRoute == BottomNavItem.Home.route) {
@@ -118,12 +122,17 @@ fun MainScreen(onLogout: () -> Unit) {
                     }
                 }
             )
-        }
+        },
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
     ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = BottomNavItem.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
         ) {
             composable(BottomNavItem.Home.route) {
                 HomeScreen(navController, username = userName!!)
@@ -241,6 +250,15 @@ fun MainScreen(onLogout: () -> Unit) {
                 )
             }
 
+            composable(
+                "${AppRoutes.EXERCISE_DETAIL}/{exerciseId}",
+                arguments = listOf(navArgument("exerciseId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: ""
+                ExerciseDetailScreen(exerciseId = exerciseId, navController = navController)
+            }
+
+
             // CHAT SCREEN - single peer chat
             composable(
                 "chat/{peerUserId}",
@@ -271,7 +289,8 @@ fun MainScreen(onLogout: () -> Unit) {
                 ChatScreen(
                     messages = messages,
                     onSend = { viewModel.sendMessage(it) },
-                    currentUserId = currentUserId
+                    currentUserId = currentUserId,
+                    onBack = { navController.navigateUp() }
                 )
             }
             composable(AppRoutes.EDIT_ACCOUNT_INFO) { EditAccountInfoScreen(navController) }

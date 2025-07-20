@@ -15,6 +15,7 @@ object AppRoutes {
     const val SELECT_EXERCISE = "select_exercise"
     const val WORKOUT_SESSION = "workout_session"
     const val LOGOUT = "logout"
+    const val EXERCISE_DETAIL = "exercise_detail"
 
     // Settings Subscreens ✅
     const val EDIT_ACCOUNT_INFO = "settings/edit_account"
