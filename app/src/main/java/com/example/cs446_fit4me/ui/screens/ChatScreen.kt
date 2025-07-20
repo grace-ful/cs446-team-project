@@ -125,9 +125,9 @@ fun ChatScreen(
                     },
                     modifier = Modifier
                         .padding(start = 4.dp)
-                        .size(48.dp) // Match WhatsApp style
+                        .size(48.dp)
                         .background(
-                            color = Color(0xff5c4896), // WhatsApp green
+                            color = Color(0xff5c4896),
                             shape = CircleShape
                         )
                 ) {
