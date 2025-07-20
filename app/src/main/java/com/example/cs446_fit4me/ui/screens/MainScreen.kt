@@ -41,6 +41,9 @@ fun MainScreen(onLogout: () -> Unit) {
     var userName by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val userPrefs = remember { com.example.cs446_fit4me.datastore.UserPreferencesManager(context) }
+    val userId by userPrefs.userIdFlow.collectAsState(initial = null)
+
 
     // Tab state for bottom nav (KEY)
     var selectedTab by remember { mutableStateOf(BottomNavItem.Home.route) }
@@ -158,6 +161,7 @@ fun MainScreen(onLogout: () -> Unit) {
                     navController = navController,
                     workoutViewModel = workoutViewModel,
                     onAddExerciseClicked = { navController.navigate("select_exercise") },
+                    userId = userId,
                     onCreateWorkout = { name -> /* TODO */ }
                 )
             }

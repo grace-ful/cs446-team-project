@@ -39,6 +39,7 @@ class WorkoutViewModel : ViewModel() {
 
     fun createWorkoutTemplateOnServer(
         context: Context,
+        userId: String,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -49,7 +50,8 @@ class WorkoutViewModel : ViewModel() {
                 val response = api.createWorkoutTemplate(
                     CreateWorkoutTemplateRequest(
                         name = workoutName,
-                        exerciseIds = selectedExercises.map { it.id }
+                        exerciseIds = selectedExercises.map { it.id },
+                        userId = userId,
                     )
                 )
                 Log.d("WorkoutViewModel", "Created workout: $response")
@@ -132,9 +134,34 @@ class WorkoutViewModel : ViewModel() {
         return _myWorkouts.find { it.name == name }
     }
 
-    fun deleteWorkout(name: String) {
-        _myWorkouts.removeIf { it.name == name }
+    fun deleteWorkoutById(id: String) {
+        _myWorkouts.removeIf { it.id == id }
     }
+
+    fun deleteWorkoutTemplate(
+        context: Context,
+        workoutId: String,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            try {
+                val api = ApiClient.getWorkoutApi(context)
+                val response = api.deleteWorkoutTemplate(workoutId)
+                if (response.isSuccessful) {
+                    // Remove from local list so UI updates
+                    deleteWorkoutById(workoutId)
+                    onSuccess()
+                } else {
+                    onError("Failed to delete workout: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onError("Error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+
 
     fun addWorkout(workout: WorkoutModel) {
         _myWorkouts.add(workout)
@@ -172,13 +199,6 @@ class WorkoutViewModel : ViewModel() {
         if (index != -1) {
             _myWorkouts[index] = updatedWorkout
         }
-        // (optional) update standard workouts as well
-        /*
-        val stdIndex = _standardWorkouts.indexOfFirst { it.id == updatedWorkout.id }
-        if (stdIndex != -1) {
-            _standardWorkouts[stdIndex] = updatedWorkout
-        }
-        */
     }
 
     fun startWorkoutSessionFromTemplate(

@@ -26,7 +26,7 @@ interface WorkoutApiService {
         @Body request: ExerciseIdListRequest
     ): WorkoutTemplateResponse
 
-    @PUT("workout-template/{id}/remove-exercise")
+    @HTTP(method = "DELETE", path = "workout-template/{id}/remove-exercise", hasBody = true)
     suspend fun removeExerciseFromTemplate(
         @Path("id") id: String,
         @Body request: RemoveExerciseRequest
@@ -37,5 +37,9 @@ interface WorkoutApiService {
         @Path("id") id: String,
         @Body request: UpdateWorkoutNameRequest
     ): WorkoutTemplateResponse
+
+    @DELETE("workout-template/{id}")
+    suspend fun deleteWorkoutTemplate(@Path("id") id: String): Response<Unit>
+
 
 }
