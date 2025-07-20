@@ -92,9 +92,9 @@ fun MainScreen(onLogout: () -> Unit) {
 
     Scaffold(
         topBar = {
-            if (bottomNavItems.any { it.route == currentRoute }) {
+            if (bottomNavItems.any { it.route == currentRoute } || currentRoute.startsWith("chat/")) {
                 TopBar(
-                    title = currentScreenTitle,
+                    title = if (currentRoute.startsWith("chat/")) "Chat" else currentScreenTitle,
                     canNavigateBack = canNavigateBack,
                     onNavigateUp = { navController.navigateUp() },
                     onSettingsClick = if (currentRoute == BottomNavItem.Home.route) {

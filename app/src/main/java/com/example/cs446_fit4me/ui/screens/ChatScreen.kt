@@ -46,13 +46,8 @@ fun ChatScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .statusBarsPadding()
     ) {
-        TopBar(
-            title = "Chat",
-            canNavigateBack = true,
-            onNavigateUp = onBack
-        )
 
         LazyColumn(
             modifier = Modifier.weight(1f).padding(8.dp),
