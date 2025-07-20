@@ -117,7 +117,6 @@ fun ChatScreen(
             )
 
             if (text.isNotBlank()) {
-                // Send button with green circle
                 IconButton(
                     onClick = {
                         onSend(text)
