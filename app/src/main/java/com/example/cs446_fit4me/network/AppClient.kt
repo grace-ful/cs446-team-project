@@ -12,6 +12,9 @@ object ApiClient {
     const val SOCKET_URL = "https://cs446-team-project-production.up.railway.app" // PROD
 //  const val BASE_URL = "https://aa048e4eb64d.ngrok-free.app/api/" // DEV
 //  const val SOCKET_URL = "https://aa048e4eb64d.ngrok-free.app" // DEV
+    // For local testing (comment after done testing)
+//    const val BASE_URL = "http://localhost:3000/api/"
+//    const val SOCKET_URL = "http://localhost:3000"
 
     // Create Retrofit instance with AuthInterceptor
     private fun createRetrofit(context: Context): Retrofit {

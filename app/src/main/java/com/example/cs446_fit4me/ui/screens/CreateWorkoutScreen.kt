@@ -24,7 +24,8 @@ fun CreateWorkoutScreen(
     navController: NavController,
     workoutViewModel: WorkoutViewModel,
     onAddExerciseClicked: () -> Unit,
-    onCreateWorkout: (String) -> Unit
+    onCreateWorkout: (String) -> Unit,
+    userId: String?
 ) {
     val workoutName = workoutViewModel.workoutName
     val selectedExercises = workoutViewModel.selectedExercises
@@ -107,7 +108,7 @@ fun CreateWorkoutScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 52.dp, max = 78.dp), // Slightly smaller card
+                            .heightIn(min = 52.dp, max = 78.dp),
                         shape = RoundedCornerShape(10.dp),
                         elevation = CardDefaults.cardElevation(1.dp)
                     ) {
@@ -141,13 +142,18 @@ fun CreateWorkoutScreen(
         val context = LocalContext.current
         Button(
             onClick = {
-                workoutViewModel.createWorkoutTemplateOnServer(
-                    context = context,
-                    onSuccess = { navController.popBackStack() },
-                    onError = { error -> println("Failed to create workout: $error") }
-                )
+                if (userId != null) {
+                    workoutViewModel.createWorkoutTemplateOnServer(
+                        context = context,
+                        userId = userId,
+                        onSuccess = { navController.popBackStack() },
+                        onError = { error -> println("Failed to create workout: $error") }
+                    )
+                } else {
+                    println("User ID is not loaded yet")
+                }
             },
-            enabled = workoutName.isNotBlank() && selectedExercises.isNotEmpty(),
+            enabled = workoutName.isNotBlank() && selectedExercises.isNotEmpty() && userId != null,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)

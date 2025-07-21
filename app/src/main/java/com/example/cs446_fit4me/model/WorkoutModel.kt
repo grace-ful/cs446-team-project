@@ -23,4 +23,5 @@ data class CreateWorkoutTemplateRequest(
     val name: String,
     val exerciseIds: List<String>,
     val isGeneral: Boolean = false,
+    val userId: String,
 )

@@ -35,15 +35,28 @@ fun WorkoutScreen(
     val userPrefs = remember { UserPreferencesManager(context) }
     val userId by userPrefs.userIdFlow.collectAsState(initial = null)
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+
+    // Show snackbar when message is set
+    if (snackbarMessage != null) {
+        LaunchedEffect(snackbarMessage) {
+            snackbarHostState.showSnackbar(snackbarMessage!!)
+            snackbarMessage = null
+        }
+    }
+
     val standardWorkouts = workoutViewModel.standardWorkouts
     val myWorkouts by remember { derivedStateOf { workoutViewModel.myWorkouts } }
 
     var selectedMyWorkoutName by remember { mutableStateOf<String?>(null) }
     var selectedStandardWorkoutName by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        workoutViewModel.fetchStandardWorkouts(context)
-        workoutViewModel.fetchUserWorkouts(context)
+    LaunchedEffect(userId) {
+        userId?.let { nonNullUserId ->
+            workoutViewModel.fetchStandardWorkouts(context)
+            workoutViewModel.fetchUserWorkouts(context, nonNullUserId)
+        }
     }
 
     var previewWorkout by remember { mutableStateOf<WorkoutModel?>(null) }
@@ -83,7 +96,15 @@ fun WorkoutScreen(
             onDelete = {
                 previewWorkout?.let { w ->
                     if (previewIsCustom) {
-                        workoutViewModel.deleteWorkout(w.name)
+                        workoutViewModel.deleteWorkoutTemplate(
+                            context = context,
+                            workoutId = w.id,
+                            onSuccess = { snackbarMessage = "Workout deleted" },
+                            onError = { error ->
+                                Log.e("WorkoutScreen", "Failed to delete workout: $error")
+                                snackbarMessage = "Failed to delete workout"
+                            }
+                        )
                     }
                 }
                 previewWorkout = null
@@ -97,6 +118,7 @@ fun WorkoutScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("create_workout") },
@@ -127,6 +149,7 @@ fun WorkoutScreen(
                     standardWorkouts = standardWorkouts,
                     onWorkoutClick = { workout ->
                         previewWorkout = workout
+                        Log.d("WorkoutID", "Clicked workout id: ${workout.id}")
                         previewIsCustom = !workout.isGeneric
                     },
                     selectedMyWorkoutName = selectedMyWorkoutName,
@@ -156,7 +179,6 @@ fun WorkoutScreen(
         }
     }
 }
-
 
 @Composable
 fun CombinedWorkoutSection(

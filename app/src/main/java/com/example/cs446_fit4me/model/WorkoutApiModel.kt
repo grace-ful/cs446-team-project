@@ -16,3 +16,7 @@ data class ExerciseIdListRequest(
 data class RemoveExerciseRequest(
     val exerciseId: String
 )
+
+data class UpdateWorkoutNameRequest(
+    val name: String
+)

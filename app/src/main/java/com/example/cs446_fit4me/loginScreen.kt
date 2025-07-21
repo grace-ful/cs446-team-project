@@ -45,6 +45,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
                 println("Login Success: $response")
                 TokenManager.saveToken(context, response.token)
                 UserManager.saveUserId(context, response.id)
+                userPrefs.saveUserId(response.id)
                 val res = ApiClient.getMatchingApi(context).updateMatches();
 
                 isLoading = false

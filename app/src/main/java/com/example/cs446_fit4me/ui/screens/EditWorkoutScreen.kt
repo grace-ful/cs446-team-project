@@ -19,6 +19,14 @@ import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.ExerciseTemplate
 import com.example.cs446_fit4me.model.WorkoutModel
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
+import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.model.ExerciseIdListRequest
+import com.example.cs446_fit4me.model.RemoveExerciseRequest
+import com.example.cs446_fit4me.model.UpdateWorkoutNameRequest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +37,8 @@ fun EditWorkoutScreen(
 ) {
     var workoutName by remember { mutableStateOf(workoutToEdit.name) }
     val exercises = remember { mutableStateListOf<ExerciseTemplate>().apply { addAll(workoutToEdit.exercises) } }
+
+    val context = LocalContext.current
 
     // Handle exercises returned from SelectExercisesScreen
     val navBackStackEntry = navController.currentBackStackEntry
@@ -58,12 +68,55 @@ fun EditWorkoutScreen(
                     Button(
                         onClick = {
                             if (canSave) {
-                                onSave(workoutToEdit.copy(name = workoutName, exercises = exercises.toList()))
-                                navController.popBackStack()
+                                val oldIds = workoutToEdit.exercises.map { it.id }.toSet()
+                                val newIds = exercises.map { it.id }.toSet()
+                                val added = newIds - oldIds
+                                val removed = oldIds - newIds
+
+                                val api = ApiClient.getWorkoutApi(context)
+                                // Launch backend updates in coroutine
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        // Add new exercises (if any)
+                                        if (added.isNotEmpty()) {
+                                            api.addExercisesToTemplate(
+                                                workoutToEdit.id,
+                                                ExerciseIdListRequest(added.toList())
+                                            )
+                                        }
+                                        // Remove exercises (if any)
+                                        for (removedId in removed) {
+                                            api.removeExerciseFromTemplate(
+                                                workoutToEdit.id,
+                                                RemoveExerciseRequest(removedId)
+                                            )
+                                        }
+                                        // handle workout name update
+                                        if (workoutName != workoutToEdit.name) {
+                                            api.updateWorkoutTemplateName(
+                                                workoutToEdit.id,
+                                                UpdateWorkoutNameRequest(workoutName)
+                                            )
+                                        }
+
+                                        // Update UI on main thread
+                                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                            onSave(
+                                                workoutToEdit.copy(
+                                                    name = workoutName,
+                                                    exercises = exercises.toList()
+                                                )
+                                            )
+                                            navController.popBackStack()
+                                        }
+                                    } catch (e: Exception) {
+                                        // Optionally handle error
+                                    }
+                                }
                             }
                         },
                         enabled = canSave,
-                        shape = RoundedCornerShape(50), // Pill shape
+                        shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (canSave) MaterialTheme.colorScheme.primary else Color.Gray,
                             contentColor = Color.White
@@ -99,7 +152,10 @@ fun EditWorkoutScreen(
                         .fillMaxWidth()
                         .padding(8.dp),
                     singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold, fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    textStyle = LocalTextStyle.current.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = MaterialTheme.typography.titleMedium.fontSize
+                    )
                 )
             }
 
@@ -141,9 +197,9 @@ fun EditWorkoutScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 52.dp, max = 78.dp), // Make cards shorter
-                            shape = RoundedCornerShape(10.dp), // Slightly less rounded
-                            elevation = CardDefaults.cardElevation(1.dp) // Lower elevation
+                                .heightIn(min = 52.dp, max = 78.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            elevation = CardDefaults.cardElevation(1.dp)
                         ) {
                             Row(
                                 Modifier
@@ -154,7 +210,6 @@ fun EditWorkoutScreen(
                                 ExerciseListItem(
                                     exercise = ex.toExercise(),
                                     modifier = Modifier.weight(1f)
-                                    // If you can, use a smaller typography in your ExerciseListItem!
                                 )
                                 IconButton(
                                     onClick = { exercises.remove(ex) }
