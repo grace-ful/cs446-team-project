@@ -3,18 +3,9 @@ package com.example.cs446_fit4me
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
-import com.example.cs446_fit4me.LoginScreen
-import com.example.cs446_fit4me.SignUpScreen
-import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
-import com.example.cs446_fit4me.ui.screens.MainScreen
 import android.util.Log
 import com.example.cs446_fit4me.navigation.AppEntryPoint
 import com.example.cs446_fit4me.network.ApiClient
@@ -28,7 +19,7 @@ import com.google.android.libraries.places.api.Places
 class MainActivity : ComponentActivity() {
     private var showMain by mutableStateOf(false)
     private var currentScreen by mutableStateOf("login")
-    private var resetKey by mutableStateOf(0) // ← NEW
+    private var resetKey by mutableIntStateOf(0) // ← NEW
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
