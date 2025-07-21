@@ -14,14 +14,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
-import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.network.ApiClient
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.example.cs446_fit4me.datastore.UserManager
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import com.example.cs446_fit4me.model.UpdateUserRequest
 import com.example.cs446_fit4me.model.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 
 
 fun filterDigits(input: String): String = input.filter { it.isDigit() }
@@ -32,7 +34,6 @@ fun filterFloatInput(input: String): String =
 @Composable
 fun ProfileScreen() {
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferencesManager(context) }
 
     var name by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
@@ -50,6 +51,11 @@ fun ProfileScreen() {
     var error by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+
+    val focusManager = LocalFocusManager.current
+    var hasLoadedInitialLocation by remember { mutableStateOf(false) }
+
+
 
     var originalState by remember {
         mutableStateOf(
@@ -107,6 +113,11 @@ fun ProfileScreen() {
             Text("Error: $error", color = MaterialTheme.colorScheme.error)
         }
         return
+    }
+
+    LaunchedEffect(Unit) {
+        delay(100)
+        focusManager.clearFocus(force = true)
     }
 
     val isAgeValid = age.toIntOrNull()?.let { it in 5..120 } == true
@@ -218,6 +229,7 @@ fun ProfileScreen() {
         item {
             val keyboardController = LocalSoftwareKeyboardController.current
             val placesClient = remember { com.google.android.libraries.places.api.Places.createClient(context) }
+            val cityFocusRequester = remember { FocusRequester() }
 
             var selectedCountry by remember { mutableStateOf("CA") }
             var cityQuery by remember { mutableStateOf("") }
@@ -238,7 +250,7 @@ fun ProfileScreen() {
 
             // Debounced API query
             LaunchedEffect(cityQuery) {
-                if (cityQuery.isNotBlank() && !hasUserSelected) {
+                if (hasLoadedInitialLocation && cityQuery.isNotBlank() && !hasUserSelected) {
                     delay(300)
                     val request = com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest.builder()
                         .setCountries(listOf(selectedCountry))
@@ -272,11 +284,13 @@ fun ProfileScreen() {
                         onValueChange = {
                             cityQuery = it
                             hasUserSelected = false
+                            hasLoadedInitialLocation = true
                         },
                         label = { Text("City") },
                         modifier = Modifier
                             .menuAnchor()
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .focusRequester(cityFocusRequester),
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
                         },
@@ -333,8 +347,8 @@ fun ProfileScreen() {
                 onClick = {
                     scope.launch {
                         try {
-                            val userId = userPrefs.userIdFlow.firstOrNull()
-                            if (userId != null) {
+                            val currentUserId = UserManager.getUserId(context)
+                            if (currentUserId != null) {
 
                                 val totalInches = (heightFeet.toIntOrNull() ?: 0) * 12 + (heightInches.toIntOrNull() ?: 0)
                                 val weightKg = (weightLbs.toFloatOrNull() ?: 0f) * 0.453592f
@@ -352,7 +366,7 @@ fun ProfileScreen() {
 
                                 if (isChanged) {
                                     val response = ApiClient.getUserApi(context).updateUser(
-                                        userId = userId,
+                                        userId = currentUserId,
                                         updateData = updateRequest
                                     )
                                     println("✅ API response: $response")
@@ -362,6 +376,8 @@ fun ProfileScreen() {
                                         name, age, heightFeet, heightInches, weightLbs, location, email,
                                         timePreference, experienceLevel, gymFrequency
                                     )
+
+                                    focusManager.clearFocus(force = true)
                                 } else {
                                     println("⚠️ No changes to update (skipping API call)")
                                 }
