@@ -70,4 +70,6 @@ export interface ChatMessage {
   senderId: string;
   receiverId: string;
   content: string;
+  createdAt?: string;
+  id?: string;
 }

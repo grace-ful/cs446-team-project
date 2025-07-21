@@ -18,6 +18,8 @@ export async function saveMessageToDb(msg: ChatMessage): Promise<ChatMessage> {
     senderId: saved.senderId,
     receiverId: saved.receiverId,
     content: saved.content,
+    createdAt: saved.createdAt.toISOString(),
+    id: saved.id,
   };
 }
 
