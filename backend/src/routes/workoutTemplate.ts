@@ -53,19 +53,61 @@ workoutTemplateRouter.get('/by-user/:userId', authMiddleware, async (req: AuthRe
 // DELETE a workout template by ID
 workoutTemplateRouter.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-    console.log(`Received DELETE request for workout template with id: ${id}`);
+  const userId = req.userId;
 
   try {
-    // Want to check if the user owns this workout template
+    // 1. Get all workoutSessions for this template
+    const workoutSessions = await prisma.workoutSession.findMany({
+      where: { workoutTemplateId: id },
+      select: { id: true },
+    });
+    const workoutSessionIds = workoutSessions.map(ws => ws.id);
+
+    // 2. Get all exerciseSessions for those workoutSessions
+    let exerciseSessionIds: string[] = [];
+    if (workoutSessionIds.length > 0) {
+      const exerciseSessions = await prisma.exerciseSession.findMany({
+        where: { workoutSessionId: { in: workoutSessionIds } },
+        select: { id: true },
+      });
+      exerciseSessionIds = exerciseSessions.map(es => es.id);
+    }
+
+    // 3. Delete all exerciseSets for those exerciseSessions
+    if (exerciseSessionIds.length > 0) {
+      await prisma.exerciseSet.deleteMany({
+        where: { exerciseSessionId: { in: exerciseSessionIds } },
+      });
+    }
+
+    // 4. Delete all exerciseSessions
+    if (exerciseSessionIds.length > 0) {
+      await prisma.exerciseSession.deleteMany({
+        where: { id: { in: exerciseSessionIds } },
+      });
+    }
+
+    // 5. Delete all workoutSessions
+    if (workoutSessionIds.length > 0) {
+      await prisma.workoutSession.deleteMany({
+        where: { id: { in: workoutSessionIds } },
+      });
+    }
+
+    // 6. Delete the workoutTemplate
     await prisma.workoutTemplate.delete({
       where: { id },
     });
-    res.status(204).send(); // No content, success
+
+    res.status(204).json({
+      msg: "Workout template deleted successfully"
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to delete workout template' });
+    res.status(500).json({ error: 'Failed to delete workout template and related data' });
   }
 });
+
 
 
 workoutTemplateRouter.post('/add', authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
