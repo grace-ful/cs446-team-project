@@ -29,7 +29,7 @@ fun SettingsSubScreenTemplate(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize(),
-            contentAlignment = Alignment.Center
+//            contentAlignment = Alignment.Center
         ) {
             content()
         }

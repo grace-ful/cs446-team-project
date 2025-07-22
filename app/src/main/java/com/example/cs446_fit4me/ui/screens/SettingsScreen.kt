@@ -1,6 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
-import android.util.Log
+
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +22,11 @@ import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import com.example.cs446_fit4me.datastore.TokenManager
 import com.example.cs446_fit4me.navigation.AppRoutes
+import com.example.cs446_fit4me.datastore.UserManager
+import com.example.cs446_fit4me.network.ApiClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 // Sealed class for all setting items
 sealed class SettingsItemEntry(
@@ -30,26 +34,23 @@ sealed class SettingsItemEntry(
     val route: String? = null,
     val isDangerous: Boolean = false
 ) {
-    object EditAccountInfo : SettingsItemEntry("Edit Account Info", AppRoutes.EDIT_ACCOUNT_INFO)
+    object EditAccountInfo : SettingsItemEntry("Edit Account Info", AppRoutes.PROFILE)
     object ChangePassword : SettingsItemEntry("Change Password", AppRoutes.CHANGE_PASSWORD)
     object NotificationSettings : SettingsItemEntry("Notification Settings", AppRoutes.NOTIFICATION_SETTINGS)
-    object RemindMe : SettingsItemEntry("Remind Me", AppRoutes.REMIND_ME)
     object Units : SettingsItemEntry("Units", AppRoutes.UNITS)
-    object Accessibility : SettingsItemEntry("Accessibility", AppRoutes.ACCESSIBILITY)
     object ProfileVisibility : SettingsItemEntry("Profile Visibility", AppRoutes.PROFILE_VISIBILITY)
     object MatchingPreferences : SettingsItemEntry("Matching Preferences", AppRoutes.MATCHING_PREFERENCES)
-    object WorkoutHistory : SettingsItemEntry("Workout History", AppRoutes.WORKOUT_HISTORY)
-    object Rate : SettingsItemEntry("Rate", AppRoutes.RATE)
-    object HelpSupport : SettingsItemEntry("Help Center", AppRoutes.HELP_SUPPORT)
     object Logout : SettingsItemEntry("Logout", isDangerous = true)
     object DeleteAccount : SettingsItemEntry("Delete Account", isDangerous = true)
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) {
     var searchQuery by remember { mutableStateOf("") }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     val settingsSections = listOf(
         "ACCOUNT SETTINGS" to listOf(
@@ -57,27 +58,25 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
             SettingsItemEntry.ChangePassword
         ),
         "NOTIFICATIONS" to listOf(
-            SettingsItemEntry.NotificationSettings,
-            SettingsItemEntry.RemindMe
+            SettingsItemEntry.NotificationSettings
+            // Removed: SettingsItemEntry.RemindMe
         ),
         "APPEARANCE" to listOf(
-            SettingsItemEntry.Units,
-            SettingsItemEntry.Accessibility
+            SettingsItemEntry.Units
+            // Removed: SettingsItemEntry.Accessibility
         ),
         "PRIVACY" to listOf(
             SettingsItemEntry.ProfileVisibility,
-            SettingsItemEntry.MatchingPreferences,
-            SettingsItemEntry.WorkoutHistory
+            SettingsItemEntry.MatchingPreferences
+            // Removed: SettingsItemEntry.WorkoutHistory
         ),
-        "SUPPORT" to listOf(
-            SettingsItemEntry.Rate,
-            SettingsItemEntry.HelpSupport
-        ),
+        // Removed entire SUPPORT section (Rate, HelpSupport)
         "DANGER ZONE" to listOf(
             SettingsItemEntry.Logout,
             SettingsItemEntry.DeleteAccount
         )
     )
+
 
     val filteredSections = settingsSections.mapNotNull { (header, items) ->
         val filteredItems = items.filter {
@@ -133,9 +132,7 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
                         onClick = {
                             when (item) {
                                 SettingsItemEntry.Logout -> showLogoutDialog = true
-                                SettingsItemEntry.DeleteAccount -> {
-                                    // TODO: Implement delete confirmation dialog
-                                }
+                                SettingsItemEntry.DeleteAccount -> showDeleteDialog = true
                                 else -> item.route?.let { navController.navigate(it) }
                             }
                         }
@@ -179,6 +176,58 @@ fun SettingsMainScreen(navController: NavController, onLogout: () -> Unit = {}) 
                 }
             )
         }
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete Account") },
+                text = { Text("Are you sure you want to delete your account? This action is irreversible.") },
+                confirmButton = {
+                    Text(
+                        "Yes",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .clickable {
+                                println("👉 Delete dialog: Yes clicked")
+                                showDeleteDialog = false
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        println("👉 Coroutine launched")
+                                        val userId = UserManager.getUserId(context = navController.context)
+                                        println("👉 Retrieved userId: $userId")
+                                        if (userId != null) {
+                                            val response = ApiClient.getUserApi(navController.context).deleteUser(userId)
+                                            println("👉 API response code: ${response.code()}")
+                                            if (response.isSuccessful) {
+                                                println("✅ User deleted successfully, clearing token...")
+                                                TokenManager.clearToken(context = navController.context)
+                                                onLogout()
+                                            } else {
+                                                val errorBody = response.errorBody()?.string()
+                                                println("❌ Delete failed with code: ${response.code()} and errorBody: $errorBody")
+                                            }
+                                        } else {
+                                            println("❌ Cannot delete account: userId is null")
+                                        }
+                                    } catch (e: Exception) {
+                                        println("❌ Exception during delete: ${e.message}")
+                                    }
+                                }
+                            },
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
+                dismissButton = {
+                    Text(
+                        "No",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .clickable { showDeleteDialog = false },
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            )
+        }
+
     }
 }
 

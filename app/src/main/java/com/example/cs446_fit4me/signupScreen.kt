@@ -63,6 +63,7 @@ fun SignUpScreen(
         scope.launch {
             isLoading = true
             error = null
+            println("🚀 [submitSignup] Start signup process")
             try {
                 val request = SignupRequest(
                     email = email.trim(),
@@ -76,21 +77,35 @@ fun SignUpScreen(
                     experienceLevel = experienceLevel,
                     gymFrequency = gymFrequency
                 )
+                println("✅ [submitSignup] Request built: $request")
 
                 val response = ApiClient.getUserApi(context).signup(request)
+                println("✅ [submitSignup] Signup API success: userId=${response.id}, token=${response.token}")
+
                 TokenManager.saveToken(context, response.token)
+                println("✅ [submitSignup] Token saved")
+
                 UserManager.saveUserId(context, response.id)
+                println("✅ [submitSignup] User ID saved in UserManager")
+
                 userPrefs.saveUserId(response.id)
-                val res = ApiClient.getMatchingApi(context).updateMatches();
+                println("✅ [submitSignup] User ID saved in UserPreferencesManager")
+
+                val res = ApiClient.getMatchingApi(context).updateMatches()
+                println("✅ [submitSignup] Matching API updated: $res")
 
                 isLoading = false
+                println("🎉 [submitSignup] Signup completed, calling onSignUpSuccess()")
                 onSignUpSuccess()
             } catch (e: Exception) {
                 isLoading = false
                 error = e.localizedMessage ?: "Signup failed"
+                println("❌ [submitSignup] Exception occurred: ${e.localizedMessage}")
+                e.printStackTrace()
             }
         }
     }
+
 
     Box(
         modifier = Modifier
