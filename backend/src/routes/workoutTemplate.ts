@@ -56,45 +56,6 @@ workoutTemplateRouter.delete('/:id', authMiddleware, async (req: AuthRequest, re
   const userId = req.userId;
 
   try {
-    // 1. Get all workoutSessions for this template
-    const workoutSessions = await prisma.workoutSession.findMany({
-      where: { workoutTemplateId: id },
-      select: { id: true },
-    });
-    const workoutSessionIds = workoutSessions.map(ws => ws.id);
-
-    // 2. Get all exerciseSessions for those workoutSessions
-    let exerciseSessionIds: string[] = [];
-    if (workoutSessionIds.length > 0) {
-      const exerciseSessions = await prisma.exerciseSession.findMany({
-        where: { workoutSessionId: { in: workoutSessionIds } },
-        select: { id: true },
-      });
-      exerciseSessionIds = exerciseSessions.map(es => es.id);
-    }
-
-    // 3. Delete all exerciseSets for those exerciseSessions
-    if (exerciseSessionIds.length > 0) {
-      await prisma.exerciseSet.deleteMany({
-        where: { exerciseSessionId: { in: exerciseSessionIds } },
-      });
-    }
-
-    // 4. Delete all exerciseSessions
-    if (exerciseSessionIds.length > 0) {
-      await prisma.exerciseSession.deleteMany({
-        where: { id: { in: exerciseSessionIds } },
-      });
-    }
-
-    // 5. Delete all workoutSessions
-    if (workoutSessionIds.length > 0) {
-      await prisma.workoutSession.deleteMany({
-        where: { id: { in: workoutSessionIds } },
-      });
-    }
-
-    // 6. Delete the workoutTemplate
     await prisma.workoutTemplate.delete({
       where: { id },
     });
@@ -175,6 +136,9 @@ workoutTemplateRouter.put('/:id/add-exercises', authMiddleware, async (req: Auth
 workoutTemplateRouter.put('/:id/update-name', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { name } = req.body;
+  const userId = req.userId;
+
+  // Validate input
   if (!name || typeof name !== "string") {
     res.status(400).json({ error: 'name is required' });
     return;
