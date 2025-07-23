@@ -252,6 +252,25 @@ userRouter.put(
   }
 );
 
+userRouter.put('/update-match-strategy', authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+  const { matchStrategy } = req.body;
+  const userId = req.userId;
+
+  try {
+	const updatedUser = await prisma.user.update({
+		where: { id: userId },
+		data: { matchStrategy },
+	});
+
+	res.json(updatedUser);
+  } catch (err: any) {
+	console.error('❌ Update error:', err);
+	res.status(400).json({
+		error: err.message
+	})
+  }
+});
+
 // Delete user
 userRouter.delete(
   "/:id",

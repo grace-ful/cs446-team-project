@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
-import authMiddleware from "src/middleware/authMiddleware";
-import { AuthRequest } from "src/lib/types";
+import authMiddleware from "../middleware/authMiddleware";
+import { AuthRequest } from "../lib/types";
 
 const exerciseSessionRouter = Router();
 

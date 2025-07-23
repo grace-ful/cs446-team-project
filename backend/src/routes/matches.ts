@@ -1,9 +1,10 @@
 import { Request, Response, Router } from "express";
 import prisma from "../lib/prisma";
-import { AuthRequest } from "src/lib/types";
+import { AuthRequest, MatchStrategy } from "../lib/types";
 import authMiddleware from "../middleware/authMiddleware";
-import { calculateMatchScore } from "../utils/calculateMatchScore";
+
 import adminMiddleware from "../middleware/adminMiddleware";
+import { calculateMatchScore } from "../utils/matching-functions/calculateMatchScore";
 
 const matchesRouter = Router();
 
@@ -35,11 +36,14 @@ matchesRouter.post("/update/:userId", authMiddleware, async (req: AuthRequest, r
       where: { id: { not: userId } },
     });
 
+    const strategy = (currentUser.matchStrategy?.toLowerCase?.() ?? "balanced") as MatchStrategy;
+
+
     // 3. Calculate scores for all other users
     const scoredMatches = otherUsers.map((other) => ({
       userId: currentUser.id,
       matchedUserId: other.id,
-      score: calculateMatchScore(currentUser, other),
+      score: calculateMatchScore(currentUser, other, strategy),
     }));
 
     // 4. Sort and keep top 10
@@ -92,11 +96,14 @@ matchesRouter.post('/refresh-all', adminMiddleware, async (req: AuthRequest, res
     for (const user of allUsers) {
       const others = allUsers.filter(u => u.id !== user.id);
 
+      const strategy = (user.matchStrategy?.toLowerCase?.() ?? "balanced") as MatchStrategy;
+
+
       const topKMatches = others
         .map(other => ({
           userId: user.id,
           matchedUserId: other.id,
-          score: calculateMatchScore(user, other),
+          score: calculateMatchScore(user, other, strategy),
         }))
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);

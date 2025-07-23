@@ -73,3 +73,12 @@ export interface ChatMessage {
   createdAt?: string;
   id?: string;
 }
+
+export enum MatchStrategy{
+	BEGINNER = "beginner",
+	BALANCED = "balanced",
+	SCHEDULE = "schedule",
+	EXPERIENCE = "experience",
+	LOCAL = "local",
+	BODY = "body"
+}

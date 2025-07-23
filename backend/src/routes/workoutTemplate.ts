@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma"; // import prisma client to communicate with the db
 import authMiddleware from "../middleware/authMiddleware";
-import { AuthRequest } from "src/lib/types";
+import { AuthRequest } from "../lib/types";
 
 const workoutTemplateRouter = Router();
 
