@@ -152,10 +152,14 @@ fun MainScreen(onLogout: () -> Unit) {
 
             composable(BottomNavItem.FindMatch.route) {
                 val context = LocalContext.current
-                val viewModel = remember { MatchingViewModel() }
-                val matches = viewModel.matches
+                val viewModel: MatchingViewModel = viewModel() // Use viewModel() for state preservation
                 LaunchedEffect(Unit) { viewModel.fetchUserMatches(context) }
-                MatchingScreen(matches = matches, navController = navController)
+
+                MatchingScreen(
+                    viewModel = viewModel,
+                    navController = navController,
+                    context = context
+                )
             }
 
             composable(BottomNavItem.Profile.route) { ProfileScreen() }
@@ -276,7 +280,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 val api = remember { ApiClient.getChatApi(context) }
                 val socketManager = remember {
                     com.example.cs446_fit4me.chat.ChatSocketManager(
-                        "http://10.0.2.2:3000",
+                        ApiClient.SOCKET_URL,
                         currentUserId
                     )
                 }

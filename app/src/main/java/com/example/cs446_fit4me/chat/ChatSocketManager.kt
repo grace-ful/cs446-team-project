@@ -2,13 +2,12 @@
 package com.example.cs446_fit4me.chat
 
 import com.example.cs446_fit4me.model.ChatMessage
-import com.example.cs446_fit4me.network.ApiClient.SOCKET_URL
 import io.socket.client.IO
 import org.json.JSONObject
 
 class ChatSocketManager(serverUrl: String, val userId: String) {
 
-    val socket: io.socket.client.Socket? = IO.socket(SOCKET_URL);
+    val socket: io.socket.client.Socket? = IO.socket(serverUrl)
 
     fun connect() {
         socket?.connect()
@@ -20,6 +19,8 @@ class ChatSocketManager(serverUrl: String, val userId: String) {
             put("senderId", message.senderId)
             put("receiverId", message.receiverId)
             put("content", message.content)
+            put("createdAt", message.createdAt) // Use 'createdAt'
+            // Don't send id; backend generates it
         }
         socket?.emit("send_message", json)
     }
@@ -28,11 +29,11 @@ class ChatSocketManager(serverUrl: String, val userId: String) {
         socket?.on("receive_message") { args ->
             val data = args[0] as JSONObject
             val msg = ChatMessage(
-                id = data.optString("id"),
+                id = data.optString("id"), // Will be null if not sent by backend
                 senderId = data.optString("senderId"),
                 receiverId = data.optString("receiverId"),
                 content = data.optString("content"),
-                createdAt = data.optString("timestamp")
+                createdAt = data.optString("createdAt") // Use 'createdAt'
             )
             onReceived(msg)
         }
@@ -42,5 +43,3 @@ class ChatSocketManager(serverUrl: String, val userId: String) {
         socket?.disconnect()
     }
 }
-
-

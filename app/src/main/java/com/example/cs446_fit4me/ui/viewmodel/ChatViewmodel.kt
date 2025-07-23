@@ -8,6 +8,7 @@ import com.example.cs446_fit4me.chat.ChatSocketManager
 import com.example.cs446_fit4me.network.SendMessageRequest
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.ZonedDateTime
 
 class ChatViewModel(
     private val api: ChatApiService,
@@ -54,7 +55,7 @@ class ChatViewModel(
             senderId = currentUserId,
             receiverId = peerUserId,
             content = text,
-            createdAt = "" // Will be filled in when echoed back by server
+            createdAt = ZonedDateTime.now().toString()
         )
         socketManager.sendMessage(msg)
 //        viewModelScope.launch {

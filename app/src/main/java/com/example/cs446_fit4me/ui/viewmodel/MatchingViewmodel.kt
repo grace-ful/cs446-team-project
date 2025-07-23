@@ -34,9 +34,30 @@ class MatchingViewModel : ViewModel() {
     }
 
     fun refreshMatchesManually(context: Context) {
-        hasFetchedMatches = false
-        fetchUserMatches(context)
+        viewModelScope.launch {
+            try {
+                val api = ApiClient.getMatchingApi(context)
+
+                // 1. Call POST /matches/update/{userId} before fetching new matches
+                val userId = com.example.cs446_fit4me.datastore.UserManager.getUserId(context)
+                if (userId != null) {
+                    val response = api.updateMatches()
+                    if (!response.isSuccessful) {
+                        Log.e("MatchingViewModel", "Failed to update matches: ${response.code()}")
+                    } else {
+                        Log.d("MatchingViewModel", "Updated matches successfully.")
+                    }
+                }
+
+                // 2. Then fetch the updated matches
+                hasFetchedMatches = false
+                fetchUserMatches(context)
+            } catch (e: Exception) {
+                Log.e("MatchingViewModel", "Error during manual refresh", e)
+            }
+        }
     }
+
 
     fun clearMatches() {
         _matches.clear()
