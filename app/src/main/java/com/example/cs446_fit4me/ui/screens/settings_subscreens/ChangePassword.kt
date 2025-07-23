@@ -24,11 +24,12 @@ fun ChangePasswordScreen(navController: NavController) {
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var submitted by remember { mutableStateOf(false) }
+    var passwordChanged by remember { mutableStateOf(false) }
+
     val isPasswordMatch = newPassword == confirmPassword
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
     SettingsSubScreenTemplate("Change Password", navController) {
-
-        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -39,7 +40,10 @@ fun ChangePasswordScreen(navController: NavController) {
         ) {
             OutlinedTextField(
                 value = newPassword,
-                onValueChange = { newPassword = it },
+                onValueChange = {
+                    newPassword = it
+                    passwordChanged = false
+                },
                 label = { Text("New Password") },
                 visualTransformation = PasswordVisualTransformation(),
                 isError = submitted && newPassword.isBlank(),
@@ -51,7 +55,10 @@ fun ChangePasswordScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = {
+                    confirmPassword = it
+                    passwordChanged = false
+                },
                 label = { Text("Confirm New Password") },
                 visualTransformation = PasswordVisualTransformation(),
                 isError = submitted && (!isPasswordMatch || confirmPassword.isBlank()),
@@ -76,6 +83,7 @@ fun ChangePasswordScreen(navController: NavController) {
                                 try {
                                     val response = ApiClient.getUserApi(context).updateUser(userId, updateRequest)
                                     println("✅ Password updated response! Response: $response")
+                                    passwordChanged = true
                                 } catch (e: Exception) {
                                     println("❌ Exception during password update: ${e.message}")
                                 }
@@ -90,6 +98,14 @@ fun ChangePasswordScreen(navController: NavController) {
                     .height(50.dp)
             ) {
                 Text("Update Password")
+            }
+
+            if (passwordChanged) {
+                Text(
+                    text = "✅ Password changed successfully!",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }
