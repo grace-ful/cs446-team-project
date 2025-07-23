@@ -198,59 +198,74 @@ workoutSessionRouter.delete("/:id", authMiddleware, async (req: AuthRequest, res
   }
 });
 
-
-
 workoutSessionRouter.post("/from-template/:templateId", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
-	const templateId = req.params.templateId;
-	const userId = req.userId;
+  const templateId = req.params.templateId;
+  const userId = req.userId;
 
-	try {
-		// 1. Fetch workout template with exercises
-		const template = await prisma.workoutTemplate.findUnique({
-			where: { id: templateId },
-			include: {
-				exercises: true,
-			},
-		});
+  try {
+    // 1. Fetch workout template with exercises
+    const template = await prisma.workoutTemplate.findUnique({
+      where: { id: templateId },
+      include: { exercises: true },
+    });
 
-		if (!template){
-			res.status(404).json({ error: "Workout template not found." });
-			return;
-		}
+    if (!template) {
+      return res.status(404).json({ error: "Workout template not found." });
+    }
 
-		// 2. Create WorkoutSession
-		if (!userId) {
-			res.status(400).json({ error: "User ID is required." });
-			return;
-		}
-		const workoutSession = await prisma.workoutSession.create({
-			data: {
-				userId,
-				workoutTemplateId: templateId
-			}
-		});
-		
-		// 3. Create Exercise Sessions
-		const exerciseSessionCreates = template.exercises.map(exercise => {
-			return prisma.exerciseSession.create({
-				data: {
-					userId,
-					exerciseTemplateID: exercise.id,
-					workoutSessionId: workoutSession.id,
-					sets: {
-						create: []
-					},
-				},
-			})
-		});
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required." });
+    }
 
-		await Promise.all(exerciseSessionCreates);
+    // 2. Create WorkoutSession
+    const workoutSession = await prisma.workoutSession.create({
+      data: {
+        userId,
+        workoutTemplateId: templateId,
+      },
+    });
 
-		// Return the workout session ID so that the frontend can navigate to it
-		return res.status(201).json({ workoutSessionId: workoutSession.id });
-	} catch (err: any) {
-		res.status(400).json({ error: err.message });
-	}
+    // 3. Create ExerciseSessions and copy sets from last usage
+    for (const exercise of template.exercises) {
+      // a. Find most recent session for this exercise by the same user
+      const previousSession = await prisma.exerciseSession.findFirst({
+        where: {
+          exerciseTemplateID: exercise.id,
+          userId,
+          sets: { some: {} }, // must have had sets
+        },
+        orderBy: { createdAt: "desc" },
+        include: { sets: true },
+      });
+
+      // b. Create a new exercise session
+      const newExerciseSession = await prisma.exerciseSession.create({
+        data: {
+          userId,
+          exerciseTemplateID: exercise.id,
+          workoutSessionId: workoutSession.id,
+        },
+      });
+
+      // c. Copy previous sets (if any) to new session
+      if (previousSession && previousSession.sets.length > 0) {
+        const setsToCreate = previousSession.sets.map(set => ({
+          reps: set.reps,
+          weight: set.weight,
+          duration: set.duration,
+          exerciseSessionId: newExerciseSession.id,
+        }));
+
+        await prisma.exerciseSet.createMany({ data: setsToCreate });
+      }
+    }
+
+    return res.status(201).json({ workoutSessionId: workoutSession.id });
+  } catch (err: any) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
 });
+
 
 export default workoutSessionRouter;
