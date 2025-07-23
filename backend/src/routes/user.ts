@@ -99,6 +99,7 @@ userRouter.post(
       const { passwordHash: _, ...userWithoutPassword } = newUser;
       res.status(201).json({
         user: userWithoutPassword,
+        id: newUser.id,
         token: `Bearer ${token}`,
       });
     } catch (err: any) {
