@@ -8,6 +8,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.DELETE
 import retrofit2.http.Path
 
 interface UserApiService {
@@ -26,5 +27,10 @@ interface UserApiService {
         @Path("id") userId: String,
         @Body updateData: UpdateUserRequest
     ): UserResponse
+
+    @DELETE("user/{id}")
+    suspend fun deleteUser(
+        @Path("id") userId: String
+    ): retrofit2.Response<Void>
 
 }

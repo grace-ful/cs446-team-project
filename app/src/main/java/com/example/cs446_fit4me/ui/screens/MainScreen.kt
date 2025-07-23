@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,7 +25,6 @@ import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
 import com.example.cs446_fit4me.network.ApiClient
-import com.example.cs446_fit4me.ui.screens.ChatScreen
 import com.example.cs446_fit4me.ui.chat.ChatViewModel
 import com.example.cs446_fit4me.ui.components.BottomNavigationBar
 import com.example.cs446_fit4me.ui.components.TopBar
@@ -301,17 +299,11 @@ fun MainScreen(onLogout: () -> Unit) {
                     onBack = { navController.navigateUp() }
                 )
             }
-            composable(AppRoutes.EDIT_ACCOUNT_INFO) { EditAccountInfoScreen(navController) }
             composable(AppRoutes.CHANGE_PASSWORD) { ChangePasswordScreen(navController) }
             composable(AppRoutes.NOTIFICATION_SETTINGS) { NotificationSettingsScreen(navController) }
-            composable(AppRoutes.REMIND_ME) { RemindMeScreen(navController) }
             composable(AppRoutes.UNITS) { UnitsScreen(navController) }
-            composable(AppRoutes.ACCESSIBILITY) { AccessibilityScreen(navController) }
             composable(AppRoutes.PROFILE_VISIBILITY) { ProfileVisibilityScreen(navController) }
             composable(AppRoutes.MATCHING_PREFERENCES) { MatchingPreferencesScreen(navController) }
-            composable(AppRoutes.WORKOUT_HISTORY) { WorkoutHistoryScreen(navController) }
-            composable(AppRoutes.RATE) { RateScreen(navController) }
-            composable(AppRoutes.HELP_SUPPORT) { HelpSupportScreen(navController) }
 
         }
     }
