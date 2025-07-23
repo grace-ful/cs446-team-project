@@ -62,7 +62,13 @@ fun WorkoutSessionScreen(
         if (uiState.exerciseSessions.isEmpty()) {
             Text("No exercises found in this session.")
         } else {
-            val expandedMap = remember { mutableStateMapOf<String, Boolean>() }
+            val expandedMap = remember(uiState.exerciseSessions) {
+                mutableStateMapOf<String, Boolean>().apply {
+                    uiState.exerciseSessions.forEach { exercise ->
+                        this[exercise.id] = exercise.sets.isNotEmpty()
+                    }
+                }
+            }
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(uiState.exerciseSessions) { exercise ->
