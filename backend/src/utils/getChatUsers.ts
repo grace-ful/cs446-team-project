@@ -1,27 +1,40 @@
 import prisma from "../lib/prisma";
 
 export async function getChatUsersForUser(userId: string) {
-  // Get distinct user IDs this user has chatted with (as sender or receiver)
-  const sent = await prisma.message.findMany({
-    where: { senderId: userId },
-    select: { receiverId: true },
-  });
-  const received = await prisma.message.findMany({
-    where: { receiverId: userId },
-    select: { senderId: true },
+  // Get all messages involving this user, sorted by newest first
+  const messages = await prisma.message.findMany({
+    where: {
+      OR: [
+        { senderId: userId },
+        { receiverId: userId },
+      ],
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      senderId: true,
+      receiverId: true,
+      createdAt: true,
+    },
   });
 
-  // Flatten and deduplicate user IDs
-  const userSet = new Set([
-    ...sent.map((msg) => msg.receiverId),
-    ...received.map((msg) => msg.senderId),
-  ]);
-  userSet.delete(userId); // Remove self if present
-  const userIds = Array.from(userSet);
+  const seen = new Set<string>();
+  const userToTimestamp: { [id: string]: Date } = {};
+
+  for (const msg of messages) {
+    const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+    if (!seen.has(otherUserId)) {
+      seen.add(otherUserId);
+      userToTimestamp[otherUserId] = msg.createdAt;
+    }
+  }
+
+  const userIds = Array.from(seen);
 
   if (userIds.length === 0) return [];
 
-  // Fetch only id and name for these users
+  // Fetch the corresponding user info
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
     select: {
@@ -30,5 +43,11 @@ export async function getChatUsersForUser(userId: string) {
     },
   });
 
-  return users;
+  // Combine with last message time and sort descending
+  const enriched = users.map((u) => ({
+    ...u,
+    lastMessageAt: userToTimestamp[u.id],
+  }));
+
+  return enriched.sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime());
 }
