@@ -1,19 +1,23 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
+import authMiddleware from "src/middleware/authMiddleware";
+import { AuthRequest } from "src/lib/types";
 
 const exerciseSessionRouter = Router();
 
 // Create ExerciseSession
 exerciseSessionRouter.post(
 	"/",
-	async (req: Request, res: Response): Promise<any> => {
+	authMiddleware,
+	async (req: AuthRequest, res: Response): Promise<any> => {
 		const {
 			exerciseTemplateID,
-			userId,
 			date,
 			notes,
 			workoutSessionId, // optional
 		} = req.body;
+
+		const userId = req.userId;
 
 		if (!exerciseTemplateID || !userId || !date) {
 			return res.status(400).json({ error: "Missing required fields." });
@@ -40,12 +44,14 @@ exerciseSessionRouter.post(
 // Get by ID
 exerciseSessionRouter.get(
 	"/:id",
-	async (req: Request, res: Response): Promise<any> => {
+	authMiddleware,
+	async (req: AuthRequest, res: Response): Promise<any> => {
 		const id = req.params.id;
+		const userId = req.userId;
 
 		try {
 			const session = await prisma.exerciseSession.findUnique({
-				where: { id },
+				where: { id, userId },
 				include: {
 					exerciseTemplate: true,
 					user: true,

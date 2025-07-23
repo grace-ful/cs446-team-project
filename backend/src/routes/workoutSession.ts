@@ -6,8 +6,9 @@ import { AuthRequest } from "../lib/types";
 const workoutSessionRouter = Router();
 
 // Create a WorkoutSession
-workoutSessionRouter.post("/", async (req: Request, res: Response): Promise<any> => {
-	const { userId, workoutTemplateId, workoutDate, notes } = req.body;
+workoutSessionRouter.post("/", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+	const userId = req.userId;
+	const { workoutTemplateId, workoutDate, notes } = req.body;
 
 	if (!userId || !workoutTemplateId) {
 		return res
@@ -38,10 +39,12 @@ workoutSessionRouter.post("/", async (req: Request, res: Response): Promise<any>
 // Get session by ID
 workoutSessionRouter.get(
 	"/:id",
-	async (req: Request, res: Response): Promise<any> => {
+	authMiddleware,
+	async (req: AuthRequest, res: Response): Promise<any> => {
+		const userId = req.userId;
 		try {
 			const session = await prisma.workoutSession.findUnique({
-				where: { id: req.params.id },
+				where: { id: req.params.id, userId },
 				include: {
 					Workout: true,
 					User: true,
@@ -66,10 +69,11 @@ workoutSessionRouter.get(
 );
 
 // Get all sessions for a user
-workoutSessionRouter.get("/by-user/:userId", async (req: Request, res: Response) => {
+workoutSessionRouter.get("/by-user/:userId", authMiddleware, async (req: AuthRequest, res: Response) => {
+	const userId = req.userId;
 	try {
 		const sessions = await prisma.workoutSession.findMany({
-			where: { userId: req.params.userId },
+			where: { userId },
 			include: {
 				Workout: true,
 				exerciseSessions: true,
@@ -86,95 +90,114 @@ workoutSessionRouter.get("/by-user/:userId", async (req: Request, res: Response)
 });
 
 // Update session (notes/date)
-workoutSessionRouter.put("/:id", async (req: Request, res: Response) => {
-	const { notes, workoutDate, exerciseSessions } = req.body;
+workoutSessionRouter.put("/:id", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+  const { notes, workoutDate, exerciseSessions } = req.body;
+  const userId = req.userId;
+  const sessionId = req.params.id;
 
-	try {
-		const sessionId = req.params.id;
+  try {
+    // Step 0: Verify the WorkoutSession belongs to the user
+    const session = await prisma.workoutSession.findUnique({
+      where: { id: sessionId },
+      select: { userId: true },
+    });
 
-		// Step 1: Update basic workout session fields
-		await prisma.workoutSession.update({
-			where: { id: sessionId },
-			data: {
-				notes,
-				workoutDate: workoutDate ? new Date(workoutDate) : undefined,
-			},
-		});
+    if (!session || session.userId !== userId) {
+      return res.status(403).json({ error: "Not authorized to update this session" });
+    }
 
-		// Step 2: Loop over each exercise session
-		for (const session of exerciseSessions) {
-			const exerciseSessionId = session.id;
+    // Step 1: Update basic workout session fields
+    await prisma.workoutSession.update({
+      where: { id: sessionId },
+      data: {
+        notes,
+        workoutDate: workoutDate ? new Date(workoutDate) : undefined,
+      },
+    });
 
-			for (const set of session.sets) {
-				if (set.id) {
-					// Update existing set
-					await prisma.exerciseSet.update({
-						where: { id: set.id },
-						data: {
-							reps: set.reps,
-							weight: set.weight,
-							duration: set.duration,
-							// Optional: isCompleted if you store it in DB
-						},
-					});
-				} else {
-					// Create new set
-					await prisma.exerciseSet.create({
-						data: {
-							reps: set.reps,
-							weight: set.weight,
-							duration: set.duration,
-							ExerciseSession: {
-								connect: { id: exerciseSessionId },
-							},
-						},
-					});
-				}
-			}
-		}
+    // Step 2: Validate exerciseSessions ownership
+    const validSessions = await prisma.exerciseSession.findMany({
+      where: {
+        id: { in: exerciseSessions.map((s: any) => s.id) },
+        userId,
+      },
+      select: { id: true },
+    });
 
-		res.status(200).json({ success: true });
-	} catch (err: any) {
-		console.error(err);
-		res.status(400).json({ error: "Failed to update WorkoutSession." });
-	}
+    const validSessionIds = new Set(validSessions.map(s => s.id));
+
+    // Step 3: Loop through sessions & sets
+    for (const session of exerciseSessions) {
+      const exerciseSessionId = session.id;
+
+      if (!validSessionIds.has(exerciseSessionId)) continue;
+
+      for (const set of session.sets) {
+        if (set.id) {
+          // Update existing set
+          await prisma.exerciseSet.update({
+            where: { id: set.id },
+            data: {
+              reps: set.reps,
+              weight: set.weight,
+              duration: set.duration,
+            },
+          });
+        } else {
+          // Create new set
+          await prisma.exerciseSet.create({
+            data: {
+              reps: set.reps,
+              weight: set.weight,
+              duration: set.duration,
+              ExerciseSession: {
+                connect: { id: exerciseSessionId },
+              },
+            },
+          });
+        }
+      }
+    }
+
+    res.status(200).json({ msg: "WorkoutSession updated successfully" });
+  } catch (err: any) {
+    console.error(err);
+    res.status(400).json({ error: "Failed to update WorkoutSession." });
+  }
 });
+
 
 
 // Delete session
-workoutSessionRouter.delete("/:id", async (req: Request, res: Response) => {
-	const sessionId = req.params.id;
+workoutSessionRouter.delete("/:id", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+  const sessionId = req.params.id;
+  const userId = req.userId;
 
-	try {
-		// Find all exercise sessions linked to this workout
-		const exerciseSessions = await prisma.exerciseSession.findMany({
-			where: { workoutSessionId: sessionId },
-			select: { id: true },
-		});
+  try {
+    // Step 1: Verify ownership of the session
+    const session = await prisma.workoutSession.findUnique({
+      where: { id: sessionId },
+      select: { userId: true },
+    });
 
-		// Delete all sets for each exercise session
-		await prisma.exerciseSet.deleteMany({
-			where: {
-				exerciseSessionId: { in: exerciseSessions.map(es => es.id) }
-			}
-		});
+    if (!session || session.userId !== userId) {
+      return res.status(403).json({ error: "Not authorized to delete this session" });
+    }
 
-		// Delete the exercise sessions
-		await prisma.exerciseSession.deleteMany({
-			where: { workoutSessionId: sessionId }
-		});
+    // Step 2: Delete the session (cascade will handle dependencies)
+    await prisma.workoutSession.delete({
+      where: { id: sessionId },
+    });
 
-		// Delete the workout session itself
-		await prisma.workoutSession.delete({
-			where: { id: sessionId }
-		});
-
-		res.status(204).send();
-	} catch (err) {
-		console.error(err);
-		res.status(400).json({ error: "Failed to delete WorkoutSession." });
-	}
+    res.status(204).json({
+		msg: "WorkoutSession deleted successfully"
+	});
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: "Failed to delete WorkoutSession." });
+  }
 });
+
 
 
 workoutSessionRouter.post("/from-template/:templateId", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {

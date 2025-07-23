@@ -20,24 +20,28 @@ exerciseTemplateRouter.get("/general", async (_req: Request, res: Response) => {
 });
 
 // GET template by id
-exerciseTemplateRouter.get(
-	"/:id",
-	async (req: Request, res: Response): Promise<any> => {
-		try {
-			const template = await prisma.exerciseTemplate.findUnique({
-				where: { id: req.params.id },
-			});
+exerciseTemplateRouter.get("/:id", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+	const userId = req.userId;
+	const templateId = req.params.id;
 
-			if (!template) {
-				return res.status(404).json({ error: "Template not found." });
-			}
+	try {
+		const template = await prisma.exerciseTemplate.findUnique({
+			where: { id: templateId },
+		});
 
-			res.json(template);
-		} catch (error) {
-			res.status(500).json({ error: "Failed to fetch template." });
+		if (!template) {
+			return res.status(404).json({ error: "Template not found." });
 		}
+
+		if (!template.isGeneral && template.userId !== userId) {
+			return res.status(403).json({ error: "Not authorized to view this template." });
+		}
+
+		res.json(template);
+	} catch (error) {
+		res.status(500).json({ error: "Failed to fetch template." });
 	}
-);
+});
 
 // #endregion
 
@@ -123,7 +127,7 @@ exerciseTemplateRouter.put("/:id", authMiddleware, async (req: AuthRequest, res:
 
 	try {
 		const updated = await prisma.exerciseTemplate.update({
-			where: { id: req.params.id },
+			where: { id: req.params.id, userId },
 			data: {
 				name,
 				muscleGroup,
@@ -146,7 +150,7 @@ exerciseTemplateRouter.delete("/:id", authMiddleware, async (req: AuthRequest, r
 	const userId = req.userId;
 	try {
 		await prisma.exerciseTemplate.delete({
-			where: { id: req.params.id },
+			where: { id: req.params.id, userId },
 		});
 
 		res.status(204).send();

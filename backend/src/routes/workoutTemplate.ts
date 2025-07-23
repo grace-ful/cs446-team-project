@@ -57,7 +57,7 @@ workoutTemplateRouter.delete('/:id', authMiddleware, async (req: AuthRequest, re
 
   try {
     await prisma.workoutTemplate.delete({
-      where: { id },
+      where: { id, userId },
     });
 
     res.status(204).json({
@@ -115,7 +115,7 @@ workoutTemplateRouter.put('/:id/add-exercises', authMiddleware, async (req: Auth
 
   try {
     const updatedTemplate = await prisma.workoutTemplate.update({
-      where: { id },
+      where: { id, userId },
       data: {
         exercises: {
           connect: exerciseIds.map((eid: string) => ({ id: eid }))
@@ -145,7 +145,7 @@ workoutTemplateRouter.put('/:id/update-name', authMiddleware, async (req: AuthRe
   }
   try {
     const updatedTemplate = await prisma.workoutTemplate.update({
-      where: { id },
+      where: { id, userId },
       data: { name },
       include: { exercises: true }
     });
@@ -168,7 +168,7 @@ workoutTemplateRouter.delete('/:id/remove-exercise', authMiddleware, async (req:
 
   try {
     const updatedTemplate = await prisma.workoutTemplate.update({
-      where: { id },
+      where: { id, userId },
       data: {
         exercises: {
           disconnect: { id: exerciseId }
