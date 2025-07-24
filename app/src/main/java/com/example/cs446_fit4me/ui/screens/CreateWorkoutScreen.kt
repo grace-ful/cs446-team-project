@@ -1,4 +1,4 @@
-package com.example.cs446_fit4me.ui.workout
+package com.example.cs446_fit4me.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +17,7 @@ import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.ExerciseTemplate
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 import com.example.cs446_fit4me.ui.components.ExerciseListItem
+import com.example.cs446_fit4me.model.toExercise
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
