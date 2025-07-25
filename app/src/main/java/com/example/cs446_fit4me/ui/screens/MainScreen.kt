@@ -20,6 +20,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.cs446_fit4me.LoginScreen
+import com.example.cs446_fit4me.MainActivity
 import com.example.cs446_fit4me.datastore.UserManager
 import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.navigation.BottomNavItem
@@ -84,6 +85,17 @@ fun MainScreen(onLogout: () -> Unit) {
     val currentRoute = navBackStackEntry?.destination?.route ?: BottomNavItem.Home.route
     val currentScreenTitle = getTitleByRoute(currentRoute, bottomNavItems)
     val canNavigateBack = navController.previousBackStackEntry != null
+    val activity = context as? MainActivity
+
+    LaunchedEffect(Unit) {
+        val intent = activity?.intent
+        val peerUserId = intent?.getStringExtra("open_chat_peer_id")
+        if (!peerUserId.isNullOrEmpty()) {
+            navController.navigate("chat/$peerUserId")
+            // Remove extra so it doesn't keep navigating on every recomposition
+            intent.removeExtra("open_chat_peer_id")
+        }
+    }
 
     // Always update the selectedTab when navigation changes via gestures or navController
     LaunchedEffect(currentRoute) {

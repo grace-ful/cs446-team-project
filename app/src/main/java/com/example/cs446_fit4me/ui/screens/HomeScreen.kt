@@ -20,12 +20,16 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import com.example.cs446_fit4me.chat.GlobalChatSocketManager
+import com.example.cs446_fit4me.datastore.UserManager
 import com.example.cs446_fit4me.ui.viewmodel.*
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.navigation.BottomNavItem
+import com.example.cs446_fit4me.ui.components.ChatNotificationHelper
 import java.time.LocalDate
 
 
@@ -35,6 +39,26 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         val index = LocalDate.now().dayOfYear % Quote.motivationalQuotes.size
         Quote.motivationalQuotes[index]
     }
+
+    val context = LocalContext.current
+    val userId = UserManager.getUserId(context)
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            GlobalChatSocketManager.init(userId)
+            GlobalChatSocketManager.setOnGlobalMessageReceived { msg ->
+                if (!GlobalChatSocketManager.isChatOpenForPeer(msg.senderId)) {
+                    ChatNotificationHelper.showChatNotification(
+                        context = context.applicationContext, // Now it's safe!
+                        senderName = msg.senderId,
+                        message = msg.content,
+                        peerUserId = msg.senderId
+                    )
+                }
+            }
+        }
+    }
+
+
 
     Column(
         modifier = Modifier
