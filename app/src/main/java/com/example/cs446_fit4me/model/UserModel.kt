@@ -5,6 +5,8 @@ enum class TimePreference { MORNING, AFTERNOON, EVENING, NIGHT, NONE }
 enum class ExperienceLevel { BEGINNER, INTERMEDIATE, ADVANCED, ATHLETE, COACH }
 enum class GymFrequency { NEVER, RARELY, OCCASIONALLY, REGULARLY, FREQUENTLY, DAILY }
 
+enum class MatchStrategy { BALANCED, SCHEDULE, EXPERIENCE, LOCAL, BODY, BEGINNER }
+
 fun String.toTimePreferenceOrNull() = try { TimePreference.valueOf(this.uppercase()) } catch (e: Exception) { null }
 fun String.toExperienceLevelOrNull() = try { ExperienceLevel.valueOf(this.uppercase()) } catch (e: Exception) { null }
 fun String.toGymFrequencyOrNull() = try { GymFrequency.valueOf(this.uppercase()) } catch (e: Exception) { null }
@@ -21,7 +23,8 @@ data class SignupRequest(
     val location: String,
     val timePreference: TimePreference,
     val experienceLevel: ExperienceLevel,
-    val gymFrequency: GymFrequency
+    val gymFrequency: GymFrequency,
+    val matchStrategy: MatchStrategy? = null // optional, backend defaults to BALANCED
 )
 
 data class LoginRequest(
@@ -40,6 +43,7 @@ data class UserResponse(
     val timePreference: TimePreference,
     val experienceLevel: ExperienceLevel,
     val gymFrequency: GymFrequency,
+    val matchStrategy: MatchStrategy,
     val createdAt: String,
     val token: String,
 )
@@ -56,6 +60,10 @@ data class UpdateUserRequest(
     val experienceLevel: ExperienceLevel? = null,
     val gymFrequency: GymFrequency? = null,
     val password: String? = null // optional, only if you want to update password
+)
+
+data class UpdateMatchStrategyRequest(
+    val matchStrategy: MatchStrategy
 )
 
 data class UserMatch(
