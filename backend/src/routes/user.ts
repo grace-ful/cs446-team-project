@@ -6,10 +6,12 @@ import {
   GymFrequency,
   AuthRequest,
   Equipment,
+  Gender,
 } from "../lib/types";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import authMiddleware from "../middleware/authMiddleware";
+import { isEnumValue } from "../utils/isEnumValue";
 
 const userRouter = Router();
 
@@ -42,30 +44,39 @@ userRouter.post(
       timePreference,
       experienceLevel,
       gymFrequency,
+      gender,
     } = req.body;
 
-    // Validate enums
-    if (!Object.values(TimePreference).includes(timePreference)) {
+    // Validate enums (these are all strings coming in from the request body)
+    if (!isEnumValue(TimePreference, timePreference)) {
       return res.status(400).json({
         error: `Invalid timePreference. Must be one of: ${Object.values(
           TimePreference
-        ).join(", ")}.`,
+        ).join(", ")}`,
       });
     }
 
-    if (!Object.values(ExperienceLevel).includes(experienceLevel)) {
+    if (!isEnumValue(ExperienceLevel, experienceLevel)) {
       return res.status(400).json({
         error: `Invalid experienceLevel. Must be one of: ${Object.values(
           ExperienceLevel
-        ).join(", ")}.`,
+        ).join(", ")}`,
       });
     }
 
-    if (!Object.values(GymFrequency).includes(gymFrequency)) {
+    if (!isEnumValue(GymFrequency, gymFrequency)) {
       return res.status(400).json({
         error: `Invalid gymFrequency. Must be one of: ${Object.values(
           GymFrequency
-        ).join(", ")}.`,
+        ).join(", ")}`,
+      });
+    }
+
+    if (!isEnumValue(Gender, gender)) {
+      return res.status(400).json({
+        error: `Invalid gender. Must be one of: ${Object.values(Gender).join(
+          ", "
+        )}`,
       });
     }
 
@@ -79,6 +90,7 @@ userRouter.post(
       }
 
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
       const newUser = await prisma.user.create({
         data: {
           email,
@@ -88,15 +100,16 @@ userRouter.post(
           weightKg,
           age,
           location,
-          timePreference: timePreference as TimePreference,
-          experienceLevel: experienceLevel as ExperienceLevel,
-          gymFrequency: gymFrequency as GymFrequency,
+          timePreference, // string like "MORNING"
+          experienceLevel, // string like "BEGINNER"
+          gymFrequency, // string like "REGULARLY"
+          gender, // string like "MALE"
         },
       });
 
       const token = generateToken(newUser.id);
-
       const { passwordHash: _, ...userWithoutPassword } = newUser;
+
       res.status(201).json({
         user: userWithoutPassword,
         id: newUser.id,
@@ -184,16 +197,88 @@ userRouter.get(
   }
 );
 
+userRouter.put(
+  "/update-match-strategy",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const { matchStrategy } = req.body;
+    const userId = req.userId;
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { matchStrategy },
+      });
+
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("❌ Update error:", err);
+      res.status(400).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
+userRouter.put(
+  "/update-privacy",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const { profilePrivacy } = req.body;
+    const userId = req.userId;
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { profilePrivacy },
+      });
+
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("❌ Update error:", err);
+      res.status(400).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
+userRouter.put(
+  "/update-gender-matching-preference",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const { matchWithSameGender } = req.body;
+    const userId = req.userId;
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { matchWithSameGender },
+      });
+
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("❌ Update error:", err);
+      res.status(400).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
 // Update user
 userRouter.put(
   "/:id",
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<any> => {
     const userId = req.userId;
-	if (req.params.id !== userId) {
-  		res.status(403).json({ error: "You can only modify your own account." });
-		return;
-	}
+
+    if (req.params.id !== userId) {
+      return res
+        .status(403)
+        .json({ error: "You can only modify your own account." });
+    }
+
     const {
       name,
       age,
@@ -204,6 +289,7 @@ userRouter.put(
       experienceLevel,
       gymFrequency,
       password,
+      gender,
     } = req.body;
 
     const updateData: any = {};
@@ -215,24 +301,31 @@ userRouter.put(
     if (location != null) updateData.location = location;
 
     if (timePreference != null) {
-      if (!Object.values(TimePreference).includes(timePreference)) {
+      if (!isEnumValue(TimePreference, timePreference)) {
         return res.status(400).json({ error: "Invalid timePreference" });
       }
       updateData.timePreference = timePreference;
     }
 
     if (experienceLevel != null) {
-      if (!Object.values(ExperienceLevel).includes(experienceLevel)) {
+      if (!isEnumValue(ExperienceLevel, experienceLevel)) {
         return res.status(400).json({ error: "Invalid experienceLevel" });
       }
       updateData.experienceLevel = experienceLevel;
     }
 
     if (gymFrequency != null) {
-      if (!Object.values(GymFrequency).includes(gymFrequency)) {
+      if (!isEnumValue(GymFrequency, gymFrequency)) {
         return res.status(400).json({ error: "Invalid gymFrequency" });
       }
       updateData.gymFrequency = gymFrequency;
+    }
+
+    if (gender != null) {
+      if (!isEnumValue(Gender, gender)) {
+        return res.status(400).json({ error: "Invalid gender" });
+      }
+      updateData.gender = gender;
     }
 
     if (password != null) {
@@ -245,32 +338,16 @@ userRouter.put(
         where: { id: userId },
         data: updateData,
       });
-      res.json(updatedUser);
+
+      const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+
+      res.json(userWithoutPassword);
     } catch (err: any) {
       console.error("❌ Update error:", err);
       res.status(400).json({ error: err.message });
     }
   }
 );
-
-userRouter.put('/update-match-strategy', authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
-  const { matchStrategy } = req.body;
-  const userId = req.userId;
-
-  try {
-	const updatedUser = await prisma.user.update({
-		where: { id: userId },
-		data: { matchStrategy },
-	});
-
-	res.json(updatedUser);
-  } catch (err: any) {
-	console.error('❌ Update error:', err);
-	res.status(400).json({
-		error: err.message
-	})
-  }
-});
 
 // Delete user
 userRouter.delete(
