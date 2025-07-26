@@ -32,6 +32,9 @@ fun WorkoutSessionScreen(
     val uiState by viewModel.uiState.collectAsState()
     val sessionDeleted by viewModel.sessionDeleted.collectAsState()
 
+    // State for the quit dialog
+    var showQuitDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.initApi(context)
         viewModel.fetchWorkoutSession(sessionId)
@@ -57,6 +60,12 @@ fun WorkoutSessionScreen(
         .padding(16.dp)
     ) {
         Text(text = uiState.workoutName, style = MaterialTheme.typography.headlineSmall)
+        // Timer Display
+        Text(
+            text = "Elapsed Time: ${viewModel.elapsedTime.value}",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 8.dp)
+        )
         Spacer(modifier = Modifier.height(18.dp))
 
         if (uiState.exerciseSessions.isEmpty()) {
@@ -146,7 +155,7 @@ fun WorkoutSessionScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedButton(
-                onClick = { viewModel.deleteWorkoutSession({ viewModel.setSessionDeleted() }) },
+                onClick = { showQuitDialog = true },
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Quit")
@@ -156,6 +165,8 @@ fun WorkoutSessionScreen(
 
             Button(
                 onClick = {
+                    // Stop timer and get duration
+                    val durationMillis = viewModel.stopTimer()
                     viewModel.saveWorkoutSession {
                         navController.navigate("home") {
                             popUpTo("home") { inclusive = true }
@@ -167,6 +178,25 @@ fun WorkoutSessionScreen(
                 Text("Save Workout")
             }
         }
+    }
+
+    // Confirmation dialog for quitting
+    if (showQuitDialog) {
+        AlertDialog(
+            onDismissRequest = { showQuitDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.stopTimer()
+                    viewModel.deleteWorkoutSession({ viewModel.setSessionDeleted() })
+                    showQuitDialog = false
+                }) { Text("Quit Workout") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQuitDialog = false }) { Text("Cancel") }
+            },
+            title = { Text("Quit Workout?") },
+            text = { Text("Are you sure you want to quit this workout? Your progress and any unsaved changes will be lost.") }
+        )
     }
 }
 

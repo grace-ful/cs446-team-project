@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.example.cs446_fit4me.datastore.UserPreferencesManager
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.WorkoutPreviewDialog
+import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +30,7 @@ import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
 fun WorkoutScreen(
     navController: NavController,
     workoutViewModel: WorkoutViewModel = viewModel(),
+    workoutSessionViewModel: WorkoutSessionViewModel = viewModel(),
     onEditWorkout: (WorkoutModel) -> Unit
 ) {
     val context = LocalContext.current
@@ -84,6 +86,7 @@ fun WorkoutScreen(
                         context = context,
                         templateId = w.id,
                         onSuccess = { sessionId ->
+                            workoutSessionViewModel.startTimer() // starting timer
                             previewWorkout = null
                             navController.navigate("workout_session/$sessionId")
                         },

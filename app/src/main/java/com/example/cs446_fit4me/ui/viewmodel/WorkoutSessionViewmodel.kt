@@ -3,13 +3,18 @@ package com.example.cs446_fit4me.ui.viewmodel
 import WorkoutSessionApiService
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.network.ApiClient
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class WorkoutSessionViewModel : ViewModel() {
@@ -21,6 +26,43 @@ class WorkoutSessionViewModel : ViewModel() {
 
     private val _sessionDeleted = MutableStateFlow(false)
     val sessionDeleted: StateFlow<Boolean> = _sessionDeleted
+
+    // Timer logic
+    private var sessionStartTime: Long? = null
+    private var timerJob: Job? = null
+
+    private val _elapsedTime = mutableStateOf("00:00:00")
+    val elapsedTime: State<String> get() = _elapsedTime
+
+    fun startTimer() {
+        sessionStartTime = System.currentTimeMillis()
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000L)
+                sessionStartTime?.let {
+                    val elapsed = System.currentTimeMillis() - it
+                    _elapsedTime.value = formatElapsedTime(elapsed)
+                }
+            }
+        }
+    }
+
+    fun stopTimer(): Long? {
+        timerJob?.cancel()
+        timerJob = null
+        val elapsed = sessionStartTime?.let { System.currentTimeMillis() - it }
+        sessionStartTime = null
+        return elapsed
+    }
+
+    private fun formatElapsedTime(ms: Long): String {
+        val totalSeconds = ms / 1000
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return "%d:%02d:%02d".format(hours, minutes, seconds)
+    }
 
     fun initApi(context: Context) {
         apiService = ApiClient.getWorkoutSessionApi(context)
@@ -89,7 +131,7 @@ class WorkoutSessionViewModel : ViewModel() {
             exerciseSessions = _uiState.value.exerciseSessions.map { exercise ->
                 if (exercise.id == exerciseId) {
                     exercise.copy(
-                        sets = exercise.sets + ExerciseSetUI() // new blank set
+                        sets = exercise.sets + ExerciseSetUI()
                     )
                 } else exercise
             }

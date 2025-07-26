@@ -72,6 +72,7 @@ fun MainScreen(onLogout: () -> Unit) {
 
     val navController = rememberNavController()
     val workoutViewModel: WorkoutViewModel = viewModel()
+    val workoutSessionViewModel: WorkoutSessionViewModel = viewModel()
     val bottomNavItems = listOf(
         BottomNavItem.Messages,
         BottomNavItem.FindMatch,
@@ -178,6 +179,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 WorkoutScreen(
                     navController = navController,
                     workoutViewModel = workoutViewModel,
+                    workoutSessionViewModel = workoutSessionViewModel,
                     onEditWorkout = { workout ->
                         navController.navigate("edit_workout/${workout.id}")
                     }
@@ -242,7 +244,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 WorkoutSessionScreen(
                     sessionId = sessionId,
                     navController = navController,
-                    viewModel = remember { WorkoutSessionViewModel() }
+                    viewModel = workoutSessionViewModel
                 )
             }
 
