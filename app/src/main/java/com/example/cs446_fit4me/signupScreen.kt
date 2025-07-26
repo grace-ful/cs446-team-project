@@ -18,6 +18,9 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.example.cs446_fit4me.datastore.UserManager
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 
 
 
@@ -45,6 +48,7 @@ fun SignUpScreen(
     var timePreference by remember { mutableStateOf(TimePreference.NONE) }
     var experienceLevel by remember { mutableStateOf(ExperienceLevel.BEGINNER) }
     var gymFrequency by remember { mutableStateOf(GymFrequency.NEVER) }
+    var gender by remember { mutableStateOf(Gender.MALE) }
 
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -75,7 +79,8 @@ fun SignUpScreen(
                     location = location.trim(),
                     timePreference = timePreference,
                     experienceLevel = experienceLevel,
-                    gymFrequency = gymFrequency
+                    gymFrequency = gymFrequency,
+                    gender = gender
                 )
                 println("✅ [submitSignup] Request built: $request")
 
@@ -128,6 +133,7 @@ fun SignUpScreen(
                     timePreference = timePreference,
                     experienceLevel = experienceLevel,
                     gymFrequency = gymFrequency,
+                    gender = gender,
                     isLoading = isLoading,
                     isValid = isProfileFormValid,
                     onAgeChange = { age = it },
@@ -138,6 +144,7 @@ fun SignUpScreen(
                     onTimePrefChange = { timePreference = it },
                     onExperienceLevelChange = { experienceLevel = it },
                     onGymFrequencyChange = { gymFrequency = it },
+                    onGenderChange = { gender = it },
                     onBack = { isProfileSetupScreen = false },
                     onSubmit = { submitSignup() }
                 )
@@ -243,6 +250,7 @@ fun ProfileSetupScreenContent(
     timePreference: TimePreference,
     experienceLevel: ExperienceLevel,
     gymFrequency: GymFrequency,
+    gender: Gender,
     isLoading: Boolean,
     isValid: Boolean,
     onAgeChange: (String) -> Unit,
@@ -253,6 +261,7 @@ fun ProfileSetupScreenContent(
     onTimePrefChange: (TimePreference) -> Unit,
     onExperienceLevelChange: (ExperienceLevel) -> Unit,
     onGymFrequencyChange: (GymFrequency) -> Unit,
+    onGenderChange: (Gender) -> Unit,
     onBack: () -> Unit,
     onSubmit: () -> Unit
 ) {
@@ -288,7 +297,13 @@ fun ProfileSetupScreenContent(
         }
     }
 
+    val scrollState = rememberScrollState()
+
     Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(bottom = 80.dp), // ensures the last button is visible
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -298,6 +313,16 @@ fun ProfileSetupScreenContent(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = !isValid && age.toIntOrNull()?.let { it !in 5..120 } != false,
             modifier = Modifier.fillMaxWidth())
+
+        EnumDropdown(
+            label = "Gender",
+            options = Gender.entries.map { it.name },
+            selectedOption = gender.name,
+            onOptionSelected = { selected ->
+                onGenderChange(Gender.valueOf(selected))
+            }
+        )
+
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(heightFeet, onHeightFeetChange, label = { Text("Height (ft)") },
