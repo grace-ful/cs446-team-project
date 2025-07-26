@@ -56,12 +56,22 @@ class WorkoutSessionViewModel : ViewModel() {
         return elapsed
     }
 
-    private fun formatElapsedTime(ms: Long): String {
-        val totalSeconds = ms / 1000
+    fun formatElapsedTime(totalMillis: Long): String {
+        val totalSeconds = totalMillis / 1000
         val hours = totalSeconds / 3600
         val minutes = (totalSeconds % 3600) / 60
         val seconds = totalSeconds % 60
-        return "%d:%02d:%02d".format(hours, minutes, seconds)
+        return if (hours > 0)
+            "%d:%02d:%02d".format(hours, minutes, seconds)
+        else
+            "%02d:%02d".format(minutes, seconds)
+    }
+
+    fun resetTimer() {
+        timerJob?.cancel()
+        timerJob = null
+        sessionStartTime = null
+        _elapsedTime.value = "00:00:00"
     }
 
     fun initApi(context: Context) {
@@ -69,6 +79,7 @@ class WorkoutSessionViewModel : ViewModel() {
     }
 
     fun fetchWorkoutSession(sessionId: String) {
+        _sessionDeleted.value = false
         viewModelScope.launch {
             try {
                 val response = apiService?.getWorkoutSession(sessionId)
@@ -82,6 +93,10 @@ class WorkoutSessionViewModel : ViewModel() {
                 Log.e("WorkoutSessionVM", "Failed to fetch session: ${e.message}")
             }
         }
+    }
+
+    fun resetSessionDeleted() {
+        _sessionDeleted.value = false
     }
 
     fun updateReps(exerciseId: String, setIndex: Int, reps: String) {

@@ -244,7 +244,6 @@ fun MainScreen(onLogout: () -> Unit) {
                 WorkoutSessionScreen(
                     sessionId = sessionId,
                     navController = navController,
-                    viewModel = workoutSessionViewModel
                 )
             }
 
