@@ -137,11 +137,6 @@ fun MatchingPreferencesScreen(navController: NavController) {
                         modifier = Modifier.padding(16.dp)
                     )
                 }
-
-                if (isUpdating) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
             }
         }
     }

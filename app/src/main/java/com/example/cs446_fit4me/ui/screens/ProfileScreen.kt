@@ -46,6 +46,7 @@ fun ProfileScreen() {
     var timePreference by remember { mutableStateOf("NONE") }
     var experienceLevel by remember { mutableStateOf("BEGINNER") }
     var gymFrequency by remember { mutableStateOf("NEVER") }
+    var gender by remember { mutableStateOf("MALE") }
 
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -61,7 +62,7 @@ fun ProfileScreen() {
         mutableStateOf(
             listOf(
                 name, age, heightFeet, heightInches, weightLbs, location, email,
-                timePreference, experienceLevel, gymFrequency
+                timePreference, experienceLevel, gymFrequency, gender
             )
         )
     }
@@ -88,10 +89,11 @@ fun ProfileScreen() {
             timePreference = user.timePreference.name
             experienceLevel = user.experienceLevel.name
             gymFrequency = user.gymFrequency.name
+            gender = user.gender.name
 
             originalState = listOf(
                 name, age, heightFeet, heightInches, weightLbs, location, email,
-                timePreference, experienceLevel, gymFrequency
+                timePreference, experienceLevel, gymFrequency, gender
             )
 
         } catch (e: Exception) {
@@ -132,7 +134,7 @@ fun ProfileScreen() {
 
     val currentState = listOf(
         name, age, heightFeet, heightInches, weightLbs, location, email,
-        timePreference, experienceLevel, gymFrequency
+        timePreference, experienceLevel, gymFrequency, gender
     )
 
     val isChanged = currentState != originalState
@@ -195,6 +197,12 @@ fun ProfileScreen() {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+
+        item {
+            EnumDropdown("Gender", listOf("MALE", "FEMALE", "NON_BINARY", "OTHER"), gender) {
+                gender = it
+            }
         }
 
         item {
@@ -361,7 +369,8 @@ fun ProfileScreen() {
                                     location = location.trim(),
                                     timePreference = TimePreference.valueOf(timePreference),
                                     experienceLevel = ExperienceLevel.valueOf(experienceLevel),
-                                    gymFrequency = GymFrequency.valueOf(gymFrequency)
+                                    gymFrequency = GymFrequency.valueOf(gymFrequency),
+                                    gender = Gender.valueOf(gender)
                                 )
 
                                 if (isChanged) {
@@ -374,7 +383,7 @@ fun ProfileScreen() {
 
                                     originalState = listOf(
                                         name, age, heightFeet, heightInches, weightLbs, location, email,
-                                        timePreference, experienceLevel, gymFrequency
+                                        timePreference, experienceLevel, gymFrequency, gender
                                     )
 
                                     focusManager.clearFocus(force = true)

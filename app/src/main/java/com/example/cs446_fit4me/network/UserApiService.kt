@@ -5,6 +5,8 @@ import com.example.cs446_fit4me.model.SignupRequest
 import com.example.cs446_fit4me.model.UpdateUserRequest
 import com.example.cs446_fit4me.model.UserResponse
 import com.example.cs446_fit4me.model.UpdateMatchStrategyRequest
+import com.example.cs446_fit4me.model.UpdatePrivacyRequest
+import com.example.cs446_fit4me.model.UpdateGenderMatchingPreferenceRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -32,6 +34,16 @@ interface UserApiService {
     @PUT("user/update-match-strategy")
     suspend fun updateMatchStrategy(
         @Body body: UpdateMatchStrategyRequest
+    ): UserResponse
+
+    @PUT("user/update-privacy")
+    suspend fun updatePrivacy(
+        @Body body: UpdatePrivacyRequest
+    ): UserResponse
+
+    @PUT("user/update-gender-matching-preference")
+    suspend fun updateGenderMatchingPreference(
+        @Body body: UpdateGenderMatchingPreferenceRequest
     ): UserResponse
 
     @DELETE("user/{id}")
