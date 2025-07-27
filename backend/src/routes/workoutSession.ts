@@ -37,6 +37,27 @@ workoutSessionRouter.post("/", authMiddleware, async (req: AuthRequest, res: Res
 	}
 });
 
+// Get all sessions for a user
+workoutSessionRouter.get("/by-user/:userId", authMiddleware, async (req: AuthRequest, res: Response) => {
+	const userId = req.userId;
+	try {
+		const sessions = await prisma.workoutSession.findMany({
+			where: { userId },
+			include: {
+				Workout: true,
+				exerciseSessions: true,
+			},
+			orderBy: {
+				workoutDate: "desc",
+			},
+		});
+
+		res.status(200).json(sessions);
+	} catch (err: any) {
+		res.status(500).json({ error: err.message });
+	}
+});
+
 // Get session by ID
 workoutSessionRouter.get(
 	"/:id",
@@ -68,27 +89,6 @@ workoutSessionRouter.get(
 		}
 	}
 );
-
-// Get all sessions for a user
-workoutSessionRouter.get("/by-user/:userId", authMiddleware, async (req: AuthRequest, res: Response) => {
-	const userId = req.userId;
-	try {
-		const sessions = await prisma.workoutSession.findMany({
-			where: { userId },
-			include: {
-				Workout: true,
-				exerciseSessions: true,
-			},
-			orderBy: {
-				workoutDate: "desc",
-			},
-		});
-
-		res.status(200).json(sessions);
-	} catch (err: any) {
-		res.status(500).json({ error: err.message });
-	}
-});
 
 // Update session (notes/date)
 workoutSessionRouter.put("/:id", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
