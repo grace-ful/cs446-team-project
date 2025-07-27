@@ -41,6 +41,54 @@ exerciseSessionRouter.post(
 	}
 );
 
+// Get Exercise History for User
+exerciseSessionRouter.get(
+  "/by-user",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const userId = req.userId;
+
+    try {
+      const history = await prisma.exerciseSession.findMany({
+        where: { userId },
+        include: {
+          exerciseTemplate: true,
+          sets: true,
+        },
+        orderBy: {
+          date: "desc",
+        },
+      });
+
+      // Group by exerciseTemplateId
+      const grouped = history.reduce((acc, session) => {
+        const key = session.exerciseTemplateID;
+        if (!acc[key]) {
+          acc[key] = {
+            exerciseId: key,
+            exerciseName: session.exerciseTemplate?.name ?? "Unknown",
+            sessions: [],
+          };
+        }
+
+        acc[key].sessions.push({
+          sessionId: session.id,
+          date: session.date,
+          sets: session.sets,
+        });
+
+        return acc;
+      }, {} as Record<string, any>);
+
+      res.status(200).json(Object.values(grouped));
+    } catch (err: any) {
+      res.status(500).json({ 
+		msg: "Hey",
+		error: err.message });
+    }
+  }
+);
+
 // Get by ID
 exerciseSessionRouter.get(
 	"/:id",
@@ -69,5 +117,6 @@ exerciseSessionRouter.get(
 		}
 	}
 );
+
 
 export default exerciseSessionRouter;
