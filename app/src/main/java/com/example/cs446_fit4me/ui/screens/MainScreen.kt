@@ -76,8 +76,7 @@ fun MainScreen(onLogout: () -> Unit) {
         BottomNavItem.Messages,
         BottomNavItem.FindMatch,
         BottomNavItem.Home,
-        BottomNavItem.Workout,
-        BottomNavItem.Profile
+        BottomNavItem.Workout
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -158,7 +157,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 )
             }
 
-            composable(BottomNavItem.Profile.route) { ProfileScreen() }
+            composable(AppRoutes.PROFILE) { ProfileScreen() }
 
             composable(AppRoutes.SETTINGS) {
                 SettingsMainScreen(navController, onLogout)

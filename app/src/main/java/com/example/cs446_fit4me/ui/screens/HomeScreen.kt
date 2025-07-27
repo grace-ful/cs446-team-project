@@ -21,11 +21,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
-import com.example.cs446_fit4me.ui.viewmodel.*
 import com.example.cs446_fit4me.model.*
-import com.example.cs446_fit4me.navigation.BottomNavItem
+import com.example.cs446_fit4me.navigation.AppRoutes
 import java.time.LocalDate
 
 
@@ -57,7 +55,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
                 modifier = Modifier
                     .size(48.dp)
                     .clickable {
-                        navController?.navigate(BottomNavItem.Profile.route)
+                        navController?.navigate(AppRoutes.PROFILE)
                     }
             ) {
                 Box(Modifier.wrapContentSize(Alignment.Center)) {
