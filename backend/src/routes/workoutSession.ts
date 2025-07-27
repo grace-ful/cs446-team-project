@@ -38,7 +38,7 @@ workoutSessionRouter.post("/", authMiddleware, async (req: AuthRequest, res: Res
 });
 
 // Get all sessions for a user
-workoutSessionRouter.get("/by-user/:userId", authMiddleware, async (req: AuthRequest, res: Response) => {
+workoutSessionRouter.get("/by-user", authMiddleware, async (req: AuthRequest, res: Response) => {
 	const userId = req.userId;
 	try {
 		const sessions = await prisma.workoutSession.findMany({
