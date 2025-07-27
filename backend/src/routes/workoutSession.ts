@@ -108,7 +108,7 @@ workoutSessionRouter.put(
   "/:id",
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<any> => {
-    const { notes, workoutDate, exerciseSessions } = req.body;
+    const { notes, workoutDate, exerciseSessions, duration } = req.body;
     const userId = req.userId;
     const sessionId = req.params.id;
 
@@ -131,6 +131,7 @@ workoutSessionRouter.put(
         data: {
           notes,
           workoutDate: workoutDate ? new Date(workoutDate) : undefined,
+          duration,
         },
       });
 
