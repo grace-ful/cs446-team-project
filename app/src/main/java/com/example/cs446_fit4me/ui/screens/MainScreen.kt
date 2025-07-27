@@ -76,6 +76,7 @@ fun MainScreen(onLogout: () -> Unit) {
     val bottomNavItems = listOf(
         BottomNavItem.Messages,
         BottomNavItem.FindMatch,
+        BottomNavItem.History,
         BottomNavItem.Home,
         BottomNavItem.Workout,
         BottomNavItem.Profile
@@ -157,6 +158,10 @@ fun MainScreen(onLogout: () -> Unit) {
                     navController = navController,
                     context = context
                 )
+            }
+
+            composable(BottomNavItem.History.route) {
+                HistoryScreen()
             }
 
             composable(BottomNavItem.Profile.route) { ProfileScreen() }

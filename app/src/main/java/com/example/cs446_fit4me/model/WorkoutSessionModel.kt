@@ -28,6 +28,10 @@ data class ExerciseSetResponse(
 data class WorkoutSessionUI(
     val id: String = "",
     val workoutName: String = "",
+    // ISO string from backend, can be parsed & formatted
+    val workoutDate: String = "",
+    // in secs
+    val duration: Int? = null,
     val exerciseSessions: List<ExerciseSessionUI> = emptyList()
 )
 

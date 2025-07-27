@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Face // replace with actual icons
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -18,7 +19,8 @@ sealed class BottomNavItem(
     object Home : BottomNavItem("home", "Home", Icons.Filled.Home, "Home")
     object Messages : BottomNavItem("messages", "Messages", Icons.Filled.Email, "Messages")
     object FindMatch : BottomNavItem("find_match", "Find A Gym Buddy", Icons.Filled.Face, "Find Match")
-    object Workout : BottomNavItem("workout", "Get those Gainz!!!!", Icons.Filled.Add, "Workout")
+    object History : BottomNavItem("history", "See your History", Icons.Filled.History, "History")
+    object Workout : BottomNavItem("workout", "Get those Gainz!", Icons.Filled.Add, "Workout")
     object Profile : BottomNavItem("profile", "Profile", Icons.Filled.AccountCircle, "Profile")
 }
 
