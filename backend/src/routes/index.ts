@@ -8,7 +8,6 @@ import workoutSessionRouter from "./workoutSession";
 import prRouter from "./pr";
 import matchesRouter from "./matches";
 import { chatRouter } from "./chat";
-import { utilRouter } from "./util";
 
 const router = Router();
 
@@ -27,6 +26,5 @@ router.use("/workout-sessions", workoutSessionRouter);
 router.use("/pr", prRouter);
 router.use("/matches", matchesRouter);
 router.use("/chat", chatRouter)
-router.use("/util", utilRouter);
 
 export default router;
