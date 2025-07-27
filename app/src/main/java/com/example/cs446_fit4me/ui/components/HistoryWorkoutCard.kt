@@ -2,10 +2,7 @@ package com.example.cs446_fit4me.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,11 +10,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import androidx.compose.ui.tooling.preview.Preview
 
 fun formatWorkoutDate(isoString: String): String {
     return try {
@@ -27,18 +24,20 @@ fun formatWorkoutDate(isoString: String): String {
         val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d")
         date.format(formatter)
     } catch (e: Exception) {
-        isoString
+        "--"
     }
 }
 
 fun formatDuration(seconds: Int?): String {
-    if (seconds == null) return "--"
+    if (seconds == null || seconds <= 0) return "--"
     val h = seconds / 3600
     val m = (seconds % 3600) / 60
+    val s = seconds % 60
     return buildString {
         if (h > 0) append("${h}h ")
-        append("${m} mins")
-    }
+        if (m > 0 || h > 0) append("${m}m ")
+        if (h == 0 && m == 0) append("${s}s")
+    }.trim()
 }
 
 @Composable
@@ -56,16 +55,18 @@ fun WorkoutHistoryCard(
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
             // Workout Name
             Text(
                 text = workoutName,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
+
             Spacer(Modifier.height(12.dp))
 
-            // Day/Date and Duration in one Row
+            // Day/Date and Duration
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -96,19 +97,17 @@ fun WorkoutHistoryCard(
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(4.dp))
 
-            // Plain text, each exercise on its own line
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(top = 2.dp)
+                modifier = Modifier.padding(start = 4.dp)
             ) {
                 exerciseNames.forEach { name ->
                     Text(
                         text = name,
                         fontSize = 15.sp,
-                        color = Color.DarkGray,
-                        modifier = Modifier.padding(start = 4.dp)
+                        color = Color.DarkGray
                     )
                 }
             }

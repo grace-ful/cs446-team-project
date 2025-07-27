@@ -161,8 +161,18 @@ fun MainScreen(onLogout: () -> Unit) {
             }
 
             composable(BottomNavItem.History.route) {
-                HistoryScreen()
+                val context = LocalContext.current
+
+                LaunchedEffect(Unit) {
+                    workoutSessionViewModel.initApi(context)
+                    workoutSessionViewModel.fetchWorkoutHistory()
+                    workoutSessionViewModel.fetchExerciseHistory()
+                }
+
+                HistoryScreen(viewModel = workoutSessionViewModel)
             }
+
+
 
             composable(BottomNavItem.Profile.route) { ProfileScreen() }
 

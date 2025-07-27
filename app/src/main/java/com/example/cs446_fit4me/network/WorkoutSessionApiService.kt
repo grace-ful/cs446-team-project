@@ -1,5 +1,5 @@
+import com.example.cs446_fit4me.model.ExerciseSessionResponse
 import com.example.cs446_fit4me.model.WorkoutSessionResponse
-import com.example.cs446_fit4me.model.WorkoutSessionUI
 import com.example.cs446_fit4me.model.WorkoutSessionUpdateRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -25,6 +25,9 @@ interface WorkoutSessionApiService {
 
     @DELETE("workout-sessions/{id}")
     suspend fun deleteWorkoutSession(@Path("id") id: String): retrofit2.Response<Unit>
+
+    @GET("workout-sessions/by-user")
+    suspend fun getWorkoutSessionsByUser(): List<WorkoutSessionResponse>
 
     data class WorkoutSessionStartResponse(
         val workoutSessionId: String
