@@ -158,6 +158,7 @@ model WorkoutSession {
 
   workoutDate DateTime @default(now())
   notes       String?
+  duration Int @default(0)
 
   exerciseSessions ExerciseSession[]
 

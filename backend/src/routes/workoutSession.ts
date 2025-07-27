@@ -8,7 +8,7 @@ const workoutSessionRouter = Router();
 // Create a WorkoutSession
 workoutSessionRouter.post("/", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
 	const userId = req.userId;
-	const { workoutTemplateId, workoutDate, notes } = req.body;
+	const { workoutTemplateId, workoutDate, notes, duration } = req.body;
 
 	if (!userId || !workoutTemplateId) {
 		return res
@@ -23,6 +23,7 @@ workoutSessionRouter.post("/", authMiddleware, async (req: AuthRequest, res: Res
 				workoutTemplateId,
 				workoutDate: workoutDate ? new Date(workoutDate) : undefined,
 				notes,
+        duration
 			},
 			include: {
 				Workout: true,
@@ -46,14 +47,14 @@ workoutSessionRouter.get(
 			const session = await prisma.workoutSession.findUnique({
 				where: { id: req.params.id, userId },
 				include: {
-					Workout: true,
-					User: true,
-					exerciseSessions: {
-						include: {
-							exerciseTemplate: true,
-							sets: true,
-						},
-					},
+          Workout: true,
+          User: true,
+          exerciseSessions: {
+            include: {
+              exerciseTemplate: true,
+              sets: true,
+            },
+          },
 				},
 			});
 
