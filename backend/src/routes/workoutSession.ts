@@ -103,6 +103,29 @@ workoutSessionRouter.get(
   }
 );
 
+workoutSessionRouter.get('/by-id/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const userId = req.userId;
+  const sessionId = req.params.id;
+
+  try {
+    const workoutSession = await prisma.workoutSession.findUnique({
+      where: { id: sessionId, userId },
+      include: {
+        Workout: true,
+        User: true,
+        exerciseSessions: {
+          include: {
+            exerciseTemplate: true,
+            sets: true,
+          },
+        },
+      },
+    })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Update session (notes/date)
 workoutSessionRouter.put(
   "/:id",

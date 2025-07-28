@@ -153,7 +153,8 @@ model WorkoutSession {
   User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
 
-  Workout           WorkoutTemplate @relation(fields: [workoutTemplateId], references: [id])
+  Workout           WorkoutTemplate @relation(fields: [workoutTemplateId], references: [id], onDelete: Cascade)
+
   workoutTemplateId String
 
   workoutDate DateTime @default(now())
