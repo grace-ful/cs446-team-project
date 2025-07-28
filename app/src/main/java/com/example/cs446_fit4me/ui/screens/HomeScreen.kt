@@ -1,6 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
-import MessagesViewModel
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,15 +21,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import com.example.cs446_fit4me.chat.GlobalChatSocketManager
 import com.example.cs446_fit4me.datastore.UserManager
-import com.example.cs446_fit4me.ui.viewmodel.*
 import com.example.cs446_fit4me.model.*
-import com.example.cs446_fit4me.navigation.BottomNavItem
-import com.example.cs446_fit4me.chat.ChatNotificationHelper
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionHistoryState
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
@@ -63,7 +57,6 @@ fun HomeScreen(navController: NavController? = null, username: String) {
 
 
     val workoutSessionViewModel: WorkoutSessionViewModel = viewModel()
-    val context = LocalContext.current
     workoutSessionViewModel.initApi(context)
     workoutSessionViewModel.fetchWorkoutHistory()
     workoutSessionViewModel.fetchExerciseHistory()
@@ -74,7 +67,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             workoutHistoryState.sessions.groupBy {
                 try {
                     LocalDate.parse(it.workoutDate, DateTimeFormatter.ISO_DATE)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }.filterKeys { it != null }.mapKeys { it.key!! }
@@ -247,7 +240,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
                     Text("OK")
                 }
             },
-            title = { Text("Workouts on ${selectedDate}") },
+            title = { Text("Workouts on $selectedDate") },
             text = {
                 if (sessions.isEmpty()) {
                     Text("No workouts found.")
