@@ -197,6 +197,28 @@ userRouter.get(
   }
 );
 
+userRouter.get(
+  "/by-id/:id",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const userId = req.params.id;
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found." });
+      }
+
+      res.json(user);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 userRouter.put(
   "/update-match-strategy",
   authMiddleware,
