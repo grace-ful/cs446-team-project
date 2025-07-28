@@ -1,7 +1,6 @@
 package com.example.cs446_fit4me.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
@@ -21,7 +20,6 @@ sealed class BottomNavItem(
     object FindMatch : BottomNavItem("find_match", "Find A Gym Buddy", Icons.Filled.Face, "Find Match")
     object History : BottomNavItem("history", "See your History", Icons.Filled.History, "History")
     object Workout : BottomNavItem("workout", "Get those Gainz!", Icons.Filled.Add, "Workout")
-    object Profile : BottomNavItem("profile", "Profile", Icons.Filled.AccountCircle, "Profile")
 }
 
 fun getTitleByRoute(route: String?, items: List<BottomNavItem>): String {

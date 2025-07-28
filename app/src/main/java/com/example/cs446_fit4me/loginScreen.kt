@@ -1,36 +1,40 @@
 package com.example.cs446_fit4me
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import com.example.cs446_fit4me.model.*
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
-import com.example.cs446_fit4me.network.ApiClient
-import com.google.gson.Gson
-import java.io.IOException
 import androidx.compose.ui.platform.LocalContext
-import com.example.cs446_fit4me.datastore.TokenManager
-import com.example.cs446_fit4me.datastore.UserManager
-import com.example.cs446_fit4me.datastore.UserPreferencesManager
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import com.example.cs446_fit4me.model.*
+import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.datastore.SessionManager
+import com.google.gson.Gson
+import kotlinx.coroutines.launch
+import java.io.IOException
+
+private const val TAG = "LoginScreen"
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit) {
+fun LoginScreen(
+    onLoginSuccess: () -> Unit = {},
+    onNavigateToSignUp: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var keepMeLoggedIn by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+
     val scope = rememberCoroutineScope()
-
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferencesManager(context) }
-
+    val sessionManager = remember { SessionManager(context) }
 
     fun login() {
+        Log.d(TAG, "Login button clicked with email=$email, keepMeLoggedIn=$keepMeLoggedIn")
         isLoading = true
         error = null
 
@@ -40,19 +44,34 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
                     email = email.trim(),
                     password = password
                 )
+                Log.d(TAG, "Sending login request: $request")
 
-                val response = ApiClient.getUserApi(context).login(request) // ← Use updated context-aware client
-                println("Login Success: $response")
-                TokenManager.saveToken(context, response.token)
-                UserManager.saveUserId(context, response.id)
-                userPrefs.saveUserId(response.id)
-                val res = ApiClient.getMatchingApi(context).updateMatches();
+                val response = ApiClient.getUserApi(context).login(request)
+                Log.d(TAG, "Login Success! Response: $response")
+
+                sessionManager.saveSession(
+                    userId = response.id,
+                    token = response.token,
+                    keepLoggedIn = keepMeLoggedIn
+                )
+                ApiClient.setToken(response.token)
+                Log.d(TAG, "Session saved: userId=${response.id}, token=${response.token.take(10)}..., keep=$keepMeLoggedIn")
+
+                // Optional: trigger additional APIs if needed
+                try {
+                    ApiClient.getMatchingApi(context).updateMatches()
+                    Log.d(TAG, "updateMatches() called successfully")
+                } catch (e: Exception) {
+                    Log.w(TAG, "updateMatches() failed: ${e.message}")
+                }
 
                 isLoading = false
+                Log.d(TAG, "Calling onLoginSuccess() now...")
                 onLoginSuccess()
+
             } catch (e: Exception) {
                 isLoading = false
-                e.printStackTrace()
+                Log.e(TAG, "Login failed with exception: ${e.message}", e)
 
                 error = when (e) {
                     is retrofit2.HttpException -> {
@@ -68,13 +87,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
                     else -> e.localizedMessage ?: "Login failed."
                 }
 
-                println("Login Error: $error")
+                Log.e(TAG, "Login Error message displayed: $error")
             }
         }
     }
-
-
-
 
     Box(
         modifier = Modifier
@@ -107,6 +123,19 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}, onNavigateToSignUp: () -> Unit)
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = keepMeLoggedIn,
+                    onCheckedChange = { keepMeLoggedIn = it }
+                )
+                Text("Keep me logged in")
+            }
 
             Button(
                 onClick = { login() },
