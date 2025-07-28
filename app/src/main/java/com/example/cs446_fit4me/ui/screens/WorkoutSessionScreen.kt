@@ -1,10 +1,10 @@
 package com.example.cs446_fit4me.ui.workout
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
@@ -12,11 +12,13 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.model.ExerciseSetUI
@@ -26,11 +28,18 @@ import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 fun WorkoutSessionScreen(
     sessionId: String,
     navController: NavController,
-    viewModel: WorkoutSessionViewModel
+    viewModel: WorkoutSessionViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val sessionDeleted by viewModel.sessionDeleted.collectAsState()
+    var showQuitDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sessionId) {
+        viewModel.resetSessionDeleted()
+        viewModel.resetTimer()
+        viewModel.startTimer()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.initApi(context)
@@ -52,12 +61,47 @@ fun WorkoutSessionScreen(
         return
     }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        Text(text = uiState.workoutName, style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(18.dp))
+        // --- Banner Header ---
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(3.dp, shape = MaterialTheme.shapes.extraLarge)
+                .padding(bottom = 14.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "🏋️  ${uiState.workoutName}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    maxLines = 1
+                )
+                Spacer(Modifier.height(7.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🕒 ", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        text = viewModel.elapsedTime.value,
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        letterSpacing = 2.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         if (uiState.exerciseSessions.isEmpty()) {
             Text("No exercises found in this session.")
@@ -83,7 +127,6 @@ fun WorkoutSessionScreen(
                         elevation = CardDefaults.cardElevation(3.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-
                             // Top row: dropdown toggle, name, set count, add button
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -146,7 +189,7 @@ fun WorkoutSessionScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedButton(
-                onClick = { viewModel.deleteWorkoutSession({ viewModel.setSessionDeleted() }) },
+                onClick = { showQuitDialog = true },
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Quit")
@@ -156,6 +199,7 @@ fun WorkoutSessionScreen(
 
             Button(
                 onClick = {
+                    val durationMillis = viewModel.stopTimer()
                     viewModel.saveWorkoutSession {
                         navController.navigate("home") {
                             popUpTo("home") { inclusive = true }
@@ -167,6 +211,26 @@ fun WorkoutSessionScreen(
                 Text("Save Workout")
             }
         }
+    }
+
+    // Confirmation dialog for quitting
+    if (showQuitDialog) {
+        AlertDialog(
+            onDismissRequest = { showQuitDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.stopTimer()
+                    viewModel.resetTimer()
+                    viewModel.deleteWorkoutSession({ viewModel.setSessionDeleted() })
+                    showQuitDialog = false
+                }) { Text("Quit Workout") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQuitDialog = false }) { Text("Cancel") }
+            },
+            title = { Text("Quit Workout?") },
+            text = { Text("Are you sure you want to quit this workout? Your progress and any unsaved changes will be lost.") }
+        )
     }
 }
 

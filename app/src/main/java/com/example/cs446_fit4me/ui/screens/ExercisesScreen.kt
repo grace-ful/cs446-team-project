@@ -73,6 +73,8 @@ fun ExercisesScreen(navController: NavController? = null) {
 
     var editingExercise by remember { mutableStateOf<Exercise?>(null) }
 
+    val scope = rememberCoroutineScope()
+
 
     LaunchedEffect(Unit) {
         val token = context.dataStore.data
@@ -300,8 +302,22 @@ fun ExercisesScreen(navController: NavController? = null) {
                 exercises = filteredExercises,
                 modifier = Modifier.weight(1f),
                 onEditClick = { editingExercise = it },
+
                 onDeleteClick = { toDelete ->
-                    myExercises = myExercises.filter { it.id != toDelete.id }
+
+
+                    scope.launch {
+                        try {
+                            val response = ApiClient.getExerciseApi(context).deleteExercise(toDelete.id)
+                            if (response.isSuccessful) {
+                                myExercises = myExercises.filter { it.id != toDelete.id }
+                            } else {
+                                Log.e("ExerciseDelete", "Failed with code: ${response.code()}")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("ExerciseDelete", "Error deleting exercise: ${e.message}")
+                        }
+                    }
                 },
                 isEditable = selectedTabIndex == 1,
                 onInfoClick = { exercise ->
