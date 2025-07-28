@@ -1,6 +1,5 @@
 package com.example.cs446_fit4me.ui.screens
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,12 +10,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import com.example.cs446_fit4me.chat.GlobalChatSocketManager
@@ -43,18 +40,14 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         Quote.motivationalQuotes[index]
     }
 
-
     val context = LocalContext.current
     val userId = UserManager.getUserId(context)
     LaunchedEffect(userId) {
-        if (userId != null) {
-            GlobalChatSocketManager.init(userId)
-            GlobalChatSocketManager.setOnGlobalMessageReceived(context) { msg ->
-            }
-
+        userId?.let {
+            GlobalChatSocketManager.init(it)
+            GlobalChatSocketManager.setOnGlobalMessageReceived(context) {}
         }
     }
-
 
     val workoutSessionViewModel: WorkoutSessionViewModel = viewModel()
     workoutSessionViewModel.initApi(context)
@@ -62,18 +55,10 @@ fun HomeScreen(navController: NavController? = null, username: String) {
     workoutSessionViewModel.fetchExerciseHistory()
 
     val workoutHistoryState = workoutSessionViewModel.historyState.collectAsState().value
-    val workoutDatesMap: Map<LocalDate, List<WorkoutSessionUI>> = when (workoutHistoryState) {
-        is WorkoutSessionHistoryState.Success -> {
-            workoutHistoryState.sessions.groupBy {
-                try {
-                    LocalDate.parse(it.workoutDate, DateTimeFormatter.ISO_DATE)
-                } catch (_: Exception) {
-                    null
-                }
-            }.filterKeys { it != null }.mapKeys { it.key!! }
-        }
-        else -> emptyMap()
-    }
+    val workoutDatesMap = (workoutHistoryState as? WorkoutSessionHistoryState.Success)?.sessions
+        ?.mapNotNull { runCatching { LocalDate.parse(it.workoutDate, DateTimeFormatter.ISO_DATE) to it }.getOrNull() }
+        ?.groupBy({ it.first }, { it.second })
+        ?: emptyMap()
 
     val today = LocalDate.now()
     var visibleMonth by remember { mutableStateOf(today.withDayOfMonth(1)) }
@@ -84,7 +69,6 @@ fun HomeScreen(navController: NavController? = null, username: String) {
 
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-
 
     Column(
         modifier = Modifier
@@ -99,8 +83,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val firstName = username.split(" ").first()
-            Text("Hey $firstName 👋", style = MaterialTheme.typography.headlineMedium)
+            Text("Hey ${username.split(" ").first()} 👋", style = MaterialTheme.typography.headlineMedium)
 
             Surface(
                 shape = CircleShape,
@@ -119,7 +102,25 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Text("Quick Access", style = MaterialTheme.typography.titleMedium)
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SquareButton("Workouts", onClick = { navController?.navigate("workout") }, modifier = Modifier.weight(1f))
+                SquareButton("Exercises", onClick = { navController?.navigate("exercises") }, modifier = Modifier.weight(1f))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SquareButton("Messages", onClick = { navController?.navigate("messages") }, modifier = Modifier.weight(1f))
+                SquareButton("Match", onClick = { navController?.navigate("find_match") }, modifier = Modifier.weight(1f))
+            }
+        }
+
 
         // Calendar Header
         Row(
@@ -130,43 +131,43 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             IconButton(onClick = { visibleMonth = visibleMonth.minusMonths(1) }) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Previous month")
             }
-            Text(
-                text = monthYearLabel,
-                style = MaterialTheme.typography.titleLarge
-            )
+            Text(text = monthYearLabel, style = MaterialTheme.typography.titleLarge)
             IconButton(onClick = { visibleMonth = visibleMonth.plusMonths(1) }) {
                 Icon(Icons.Default.ArrowForward, contentDescription = "Next month")
             }
         }
 
-        // Day of Week Header
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            for (i in 0..6) {
-                val dayName = LocalDate.of(2023, 1, 1 + i)
-                    .dayOfWeek
-                    .getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                Box(
-                    modifier = Modifier.size(40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(dayName, style = MaterialTheme.typography.labelSmall)
+        // Day of Week Header (Sun to Sat)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(
+                java.time.DayOfWeek.SUNDAY,
+                java.time.DayOfWeek.MONDAY,
+                java.time.DayOfWeek.TUESDAY,
+                java.time.DayOfWeek.WEDNESDAY,
+                java.time.DayOfWeek.THURSDAY,
+                java.time.DayOfWeek.FRIDAY,
+                java.time.DayOfWeek.SATURDAY
+            ).forEach { day ->
+                val label = day.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                    Text(label, style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
 
-        // Calendar Grid with correct alignment
+        // Calendar Grid
         val firstDayOfMonth = LocalDate.of(currentYear, currentMonth, 1)
         val startDayOfWeekIndex = firstDayOfMonth.dayOfWeek.value % 7
         val totalCells = daysInMonth + startDayOfWeekIndex
         val weeks = (totalCells + 6) / 7
         var dayCounter = 1
 
-        for (week in 0 until weeks) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                for (dow in 0 until 7) {
+        repeat(weeks) { week ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                repeat(7) { dow ->
                     val cellIndex = week * 7 + dow
                     if (cellIndex < startDayOfWeekIndex || dayCounter > daysInMonth) {
-                        Spacer(modifier = Modifier.size(40.dp))
+                        Spacer(Modifier.size(40.dp))
                     } else {
                         val date = LocalDate.of(currentYear, currentMonth, dayCounter)
                         val isMarked = workoutDatesMap.containsKey(date)
@@ -177,7 +178,6 @@ fun HomeScreen(navController: NavController? = null, username: String) {
                             isToday -> MaterialTheme.colorScheme.secondaryContainer
                             else -> Color.LightGray.copy(alpha = 0.3f)
                         }
-
                         val textColor = when {
                             isMarked -> MaterialTheme.colorScheme.onPrimary
                             isToday -> MaterialTheme.colorScheme.onSecondaryContainer
@@ -198,11 +198,11 @@ fun HomeScreen(navController: NavController? = null, username: String) {
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(text = dayCounter.toString(), color = textColor)
+                                    Text(dayCounter.toString(), color = textColor)
                                     if (isMarked) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
-                                            contentDescription = "Workout done",
+                                            contentDescription = null,
                                             tint = textColor,
                                             modifier = Modifier.size(12.dp)
                                         )
@@ -216,9 +216,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Motivation
+        // Motivation Quote
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text("\uD83D\uDCAA Motivation", style = MaterialTheme.typography.titleMedium)
@@ -230,7 +228,6 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         }
     }
 
-    // Workout Summary Dialog
     if (showDialog && selectedDate != null) {
         val sessions = workoutDatesMap[selectedDate] ?: emptyList()
         AlertDialog(
@@ -242,19 +239,25 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             },
             title = { Text("Workouts on $selectedDate") },
             text = {
-                if (sessions.isEmpty()) {
-                    Text("No workouts found.")
-                } else {
-                    Column {
-                        sessions.forEach {
-                            Text("• ${it.workoutName} (${it.duration} min)")
-                        }
-                    }
-                }
+                if (sessions.isEmpty()) Text("No workouts found.")
+                else Column { sessions.forEach { Text("• ${it.workoutName} (${it.duration} min)") } }
             }
         )
     }
 }
+
+@Composable
+fun SquareButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        modifier = modifier
+            .height(60.dp)
+    ) {
+        Text(label)
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
