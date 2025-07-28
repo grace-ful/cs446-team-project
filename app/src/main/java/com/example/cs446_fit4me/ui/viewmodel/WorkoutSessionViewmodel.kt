@@ -81,10 +81,33 @@ class WorkoutSessionViewModel : ViewModel() {
         }
     }
 
-    fun saveWorkoutSession(onSuccess: () -> Unit) {
+    private fun WorkoutSessionUpdateRequest.debugString(): String =
+        buildString {
+            appendLine("WorkoutSessionUpdateRequest(")
+            exerciseSessions.forEach { ex ->
+                appendLine("  ExerciseSessionUpdateRequest(id=${ex.id})")
+                ex.sets.forEach { set ->
+                    appendLine("    ExerciseSetUpdateRequest(id=${set.id}, reps=${set.reps}, weight=${set.weight}, duration=${set.duration}, isCompleted=${set.isCompleted})")
+                }
+            }
+            append(")")
+        }
+
+
+
+    fun saveWorkoutSession(durationMillis: Long, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                val request = _uiState.value.toUpdateRequest()
+                val request = _uiState.value.toFilteredUpdateRequest(durationMillis)
+
+                Log.d(
+                    "WorkoutSessionVM",
+                    "Saving workout session: sessionId=${_uiState.value.id}, " +
+                            "workoutName=${_uiState.value.workoutName}, " +
+                            "durationMs=$durationMillis (sec=${durationMillis / 1000})\n" +
+                            request.debugString()
+                )
+
                 apiService?.updateWorkoutSession(_uiState.value.id, request)
                 onSuccess()
             } catch (e: Exception) {
@@ -92,6 +115,7 @@ class WorkoutSessionViewModel : ViewModel() {
             }
         }
     }
+
 
     fun deleteWorkoutSession(onSuccess: () -> Unit) {
         viewModelScope.launch {
@@ -282,7 +306,7 @@ class WorkoutSessionViewModel : ViewModel() {
                                     reps = it.reps,
                                     weight = it.weight,
                                     duration = it.duration,
-                                    isComplete = it.isComplete ?: false
+                                    isComplete = it.isComplete == true
                                 )
                             } ?: emptyList()
 
