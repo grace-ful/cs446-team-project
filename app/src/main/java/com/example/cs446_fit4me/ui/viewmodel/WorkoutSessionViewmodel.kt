@@ -163,6 +163,9 @@ class WorkoutSessionViewModel : ViewModel() {
 
     // Timer methods
 
+    private var timeWhenPaused: Long? = null
+    private var isPaused: Boolean = false
+
     fun startTimer() {
         sessionStartTime = System.currentTimeMillis()
         timerJob?.cancel()
@@ -189,8 +192,34 @@ class WorkoutSessionViewModel : ViewModel() {
         timerJob?.cancel()
         timerJob = null
         sessionStartTime = null
-        _elapsedTime.value = "00:00:00"
+        _elapsedTime.value = "00:00"
     }
+
+    fun pauseTimer() {
+        if (isPaused) return
+        timeWhenPaused = System.currentTimeMillis()
+        timerJob?.cancel()
+        isPaused = true
+    }
+
+    fun resumeTimer() {
+        if (!isPaused || sessionStartTime == null || timeWhenPaused == null) return
+        val pausedDuration = System.currentTimeMillis() - timeWhenPaused!!
+        sessionStartTime = sessionStartTime!! + pausedDuration
+        timeWhenPaused = null
+        isPaused = false
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000L)
+                sessionStartTime?.let {
+                    val elapsed = System.currentTimeMillis() - it
+                    _elapsedTime.value = formatElapsedTime(elapsed)
+                }
+            }
+        }
+    }
+
 
     fun formatElapsedTime(totalMillis: Long): String {
         val totalSeconds = totalMillis / 1000
