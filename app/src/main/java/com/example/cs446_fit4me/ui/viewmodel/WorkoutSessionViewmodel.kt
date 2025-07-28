@@ -1,6 +1,6 @@
 package com.example.cs446_fit4me.ui.viewmodel
 
-import WorkoutSessionApiService
+import com.example.cs446_fit4me.network.WorkoutSessionApiService
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.State
