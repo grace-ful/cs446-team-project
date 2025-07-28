@@ -33,16 +33,6 @@ fun LoginScreen(
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
 
-    // **Reset fields when screen is recomposed (after logout)**
-    LaunchedEffect(Unit) {
-        email = ""
-        password = ""
-        error = null
-        isLoading = false
-        keepMeLoggedIn = false
-        Log.d(TAG, "Login screen reset after logout")
-    }
-
     fun login() {
         Log.d(TAG, "Login button clicked with email=$email, keepMeLoggedIn=$keepMeLoggedIn")
         isLoading = true
@@ -64,8 +54,10 @@ fun LoginScreen(
                     token = response.token,
                     keepLoggedIn = keepMeLoggedIn
                 )
+                ApiClient.setToken(response.token)
                 Log.d(TAG, "Session saved: userId=${response.id}, token=${response.token.take(10)}..., keep=$keepMeLoggedIn")
 
+                // Optional: trigger additional APIs if needed
                 try {
                     ApiClient.getMatchingApi(context).updateMatches()
                     Log.d(TAG, "updateMatches() called successfully")

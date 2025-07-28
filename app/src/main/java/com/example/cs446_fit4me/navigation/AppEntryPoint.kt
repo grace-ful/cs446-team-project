@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.cs446_fit4me.LoginScreen
 import com.example.cs446_fit4me.SignUpScreen
 import com.example.cs446_fit4me.datastore.SessionManager
+import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.ui.screens.MainScreen
 import kotlinx.coroutines.launch
 
@@ -43,6 +44,7 @@ fun AppEntryPoint(
     // Only run once on first composition to decide the initial route
     LaunchedEffect(currentSession) {
         if (!initialized && currentSession != null) {
+            ApiClient.setToken(currentSession.token)
             val isPersistentlyLoggedIn =
                 currentSession.keepLoggedIn && !currentSession.token.isNullOrBlank()
 

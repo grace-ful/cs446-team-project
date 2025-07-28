@@ -16,6 +16,12 @@ object ApiClient {
 //    const val BASE_URL = "http://localhost:3000/api/"
 //    const val SOCKET_URL = "http://localhost:3000"
 
+    var currentToken: String? = null
+
+    fun setToken(token: String?) {
+        currentToken = token
+    }
+
     // Create Retrofit instance with AuthInterceptor
     private fun createRetrofit(context: Context): Retrofit {
         val client = OkHttpClient.Builder()
