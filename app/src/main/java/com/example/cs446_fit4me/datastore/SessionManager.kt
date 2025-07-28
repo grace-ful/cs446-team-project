@@ -54,6 +54,10 @@ class SessionManager(private val context: Context) {
         )
     }
 
+    suspend fun getUserId(): String? {
+        return context.dataStore.data.first()[USER_ID_KEY]
+    }
+
     /** True only when we actually persisted a token AND the user opted to keep logged in */
     val isPersistentlyLoggedInFlow: Flow<Boolean> = sessionFlow.map { session ->
         session.keepLoggedIn && !session.token.isNullOrBlank()

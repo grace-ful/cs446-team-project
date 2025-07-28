@@ -43,9 +43,11 @@ fun HomeScreen(navController: NavController? = null, username: String) {
     val context = LocalContext.current
     val userId = UserManager.getUserId(context)
     LaunchedEffect(userId) {
-        userId?.let {
-            GlobalChatSocketManager.init(it)
-            GlobalChatSocketManager.setOnGlobalMessageReceived(context) {}
+        if (userId != null) {
+            GlobalChatSocketManager.init(userId)
+            GlobalChatSocketManager.setOnGlobalMessageReceived(context) { msg ->
+            }
+
         }
     }
 
@@ -228,6 +230,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         }
     }
 
+    // Workout Summary Dialog
     if (showDialog && selectedDate != null) {
         val sessions = workoutDatesMap[selectedDate] ?: emptyList()
         AlertDialog(

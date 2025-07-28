@@ -14,6 +14,7 @@ import com.example.cs446_fit4me.datastore.SessionManager
 import com.example.cs446_fit4me.network.ApiClient
 import com.example.cs446_fit4me.ui.screens.MainScreen
 import kotlinx.coroutines.launch
+import com.example.cs446_fit4me.chat.GlobalChatSocketManager
 
 
 @Composable
@@ -74,6 +75,7 @@ fun AppEntryPoint(
         MainScreen(
             onLogout = {
                 scope.launch {
+                    GlobalChatSocketManager.disconnect()
                     sessionManager.clearSession()
                     onShowMainChanged(false)
                     onCurrentScreenChanged("login")

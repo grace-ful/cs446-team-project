@@ -22,7 +22,6 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.cs446_fit4me.LoginScreen
 import com.example.cs446_fit4me.MainActivity
-import com.example.cs446_fit4me.datastore.UserManager
 import com.example.cs446_fit4me.navigation.AppRoutes
 import com.example.cs446_fit4me.navigation.BottomNavItem
 import com.example.cs446_fit4me.navigation.getTitleByRoute
@@ -33,7 +32,7 @@ import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.viewmodel.MatchingViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
-import com.example.cs446_fit4me.ui.screens.WorkoutSessionScreen
+import com.example.cs446_fit4me.datastore.SessionManager
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
 import retrofit2.HttpException
 
@@ -355,41 +354,57 @@ fun MainScreen(onLogout: () -> Unit) {
                 "chat/{peerUserId}",
                 arguments = listOf(navArgument("peerUserId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val peerUserId = backStackEntry.arguments?.getString("peerUserId") ?: return@composable
+
                 val context = LocalContext.current
-                val currentUserId = UserManager.getUserId(context)!!
-                Log.d(TAG, "Composing ChatScreen with peerUserId=$peerUserId, currentUserId=$currentUserId")
+                val peerUserId = backStackEntry.arguments?.getString("peerUserId") ?: return@composable
 
-                val api = remember { ApiClient.getChatApi(context) }
-                val socketManager = remember {
-                    com.example.cs446_fit4me.chat.ChatSocketManager(
-                        ApiClient.SOCKET_URL,
-                        currentUserId
-                    )
-                }
-                val viewModel = remember {
-                    ChatViewModel(
-                        api = api,
-                        socketManager = socketManager,
-                        currentUserId = currentUserId,
-                        peerUserId = peerUserId
-                    )
-                }
-                val messages by viewModel.messages.collectAsState()
+                var currentUserId by remember { mutableStateOf<String?>(null) }
 
-                ChatScreen(
-                    messages = messages,
-                    onSend = {
-                        Log.d(TAG, "ChatScreen -> sendMessage: $it")
-                        viewModel.sendMessage(it)
-                    },
-                    currentUserId = currentUserId,
-                    onBack = {
-                        Log.d(TAG, "ChatScreen -> navigateUp()")
-                        navController.navigateUp()
+                // Load current userId from session
+                LaunchedEffect(Unit) {
+                    currentUserId = SessionManager(context).getUserId()
+                    Log.d(TAG, "Loaded currentUserId=$currentUserId from SessionManager")
+                }
+
+                // Avoid composing ChatScreen before userId is loaded
+                currentUserId?.let { userId ->
+                    Log.d(TAG, "Composing ChatScreen with peerUserId=$peerUserId, currentUserId=$userId")
+
+                    val api = remember { ApiClient.getChatApi(context) }
+                    val socketManager = remember {
+                        com.example.cs446_fit4me.chat.ChatSocketManager(
+                            ApiClient.SOCKET_URL,
+                            userId
+                        )
                     }
-                )
+                    val viewModel = remember {
+                        ChatViewModel(
+                            api = api,
+                            socketManager = socketManager,
+                            currentUserId = userId,
+                            peerUserId = peerUserId
+                        )
+                    }
+                    val messages by viewModel.messages.collectAsState()
+
+                    ChatScreen(
+                        messages = messages,
+                        onSend = {
+                            Log.d(TAG, "ChatScreen -> sendMessage: $it")
+                            viewModel.sendMessage(it)
+                        },
+                        currentUserId = userId,
+                        onBack = {
+                            Log.d(TAG, "ChatScreen -> navigateUp()")
+                            navController.navigateUp()
+                        }
+                    )
+                } ?: run {
+                    // Optional fallback UI while waiting
+                    Text("Loading chat...", modifier = Modifier.padding(24.dp))
+                }
             }
+
 
             composable(AppRoutes.CHANGE_PASSWORD) { ChangePasswordScreen(navController) }
             composable(AppRoutes.NOTIFICATION_SETTINGS) { NotificationSettingsScreen(navController) }
