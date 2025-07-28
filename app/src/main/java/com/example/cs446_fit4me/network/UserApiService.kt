@@ -28,6 +28,10 @@ interface UserApiService {
         @Body updateData: UpdateUserRequest
     ): UserResponse
 
+    @GET("user/by-id/{id}")
+    suspend fun getUserByIdByPath(@Path("id") userId: String): UserResponse
+
+
     @DELETE("user/{id}")
     suspend fun deleteUser(
         @Path("id") userId: String

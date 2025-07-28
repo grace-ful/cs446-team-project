@@ -46,14 +46,6 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         if (userId != null) {
             GlobalChatSocketManager.init(userId)
             GlobalChatSocketManager.setOnGlobalMessageReceived(context) { msg ->
-                if (!GlobalChatSocketManager.isChatOpenForPeer(msg.senderId)) {
-                    ChatNotificationHelper.showChatNotification(
-                        context = context.applicationContext, // safer for background
-                        senderName = msg.senderId, // Or replace with contact name
-                        message = msg.content,
-                        peerUserId = msg.senderId
-                    )
-                }
             }
 
         }

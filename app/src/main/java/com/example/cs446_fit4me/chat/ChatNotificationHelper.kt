@@ -9,7 +9,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.example.cs446_fit4me.R
 import android.app.PendingIntent
 import android.content.Intent
-
+import android.util.Log
 
 object ChatNotificationHelper {
     private const val CHANNEL_ID = "chat_messages"
@@ -21,19 +21,22 @@ object ChatNotificationHelper {
             )
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
+            Log.d("CHAT_DEBUG", "Notification channel created: $CHANNEL_ID")
         }
     }
 
     fun showChatNotification(context: Context, senderName: String, message: String, peerUserId: String) {
         try {
-            // Intent to open MainActivity with extra to indicate which chat to open
+            Log.d("CHAT_DEBUG", "Preparing notification for $senderName: $message")
+
             val intent = Intent(context, com.example.cs446_fit4me.MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 putExtra("open_chat_peer_id", peerUserId)
             }
+
             val pendingIntent = PendingIntent.getActivity(
                 context,
-                peerUserId.hashCode(), // unique for each peer
+                peerUserId.hashCode(),
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -45,12 +48,15 @@ object ChatNotificationHelper {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
-            with(NotificationManagerCompat.from(context)) {
-                notify(System.currentTimeMillis().toInt(), builder.build())
-            }
+
+            NotificationManagerCompat.from(context).notify(System.currentTimeMillis().toInt(), builder.build())
+            Log.d("CHAT_DEBUG", "Notification shown for $senderName")
         } catch (e: SecurityException) {
+            Log.e("CHAT_DEBUG", "SecurityException while showing notification: ${e.message}")
+            e.printStackTrace()
+        } catch (e: Exception) {
+            Log.e("CHAT_DEBUG", "Error while showing notification: ${e.message}")
             e.printStackTrace()
         }
     }
-
 }
