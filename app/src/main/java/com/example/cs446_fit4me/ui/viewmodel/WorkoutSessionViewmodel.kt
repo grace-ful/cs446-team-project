@@ -192,7 +192,7 @@ class WorkoutSessionViewModel : ViewModel() {
         timerJob?.cancel()
         timerJob = null
         sessionStartTime = null
-        _elapsedTime.value = "00:00:00"
+        _elapsedTime.value = "00:00"
     }
 
     fun pauseTimer() {
