@@ -6,6 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.ui.components.*
 import com.example.cs446_fit4me.ui.viewmodel.*
@@ -64,8 +66,8 @@ fun HistoryScreen(viewModel: WorkoutSessionViewModel) {
 
                     is WorkoutSessionHistoryState.Success -> {
                         val workoutSessions = (workoutHistoryState as WorkoutSessionHistoryState.Success).sessions
-                        Column {
-                            workoutSessions.forEach { session ->
+                        LazyColumn {
+                            items(workoutSessions) { session ->
                                 WorkoutHistoryCard(
                                     workoutName = session.workoutName,
                                     workoutDate = session.workoutDate,
@@ -98,12 +100,12 @@ fun HistoryScreen(viewModel: WorkoutSessionViewModel) {
 
                     is ExerciseHistoryState.Success -> {
                         val exerciseCards = (exerciseHistoryState as ExerciseHistoryState.Success).sessions
-                        Column {
-                            exerciseCards.forEach { card ->
+                        LazyColumn {
+                            items(exerciseCards) { card ->
                                 ExerciseHistoryCard(
                                     exerciseName = card.exerciseName,
                                     onClick = {
-                                        selectedExerciseHistory = card as? ExerciseHistoryCardUI
+                                        selectedExerciseHistory = card
                                         showExerciseDialog = true
                                     }
                                 )

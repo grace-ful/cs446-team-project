@@ -1,10 +1,9 @@
 package com.example.cs446_fit4me.ui.screens
 
+import MessagesViewModel
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -12,20 +11,25 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Surface
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.navigation.AppRoutes
+import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionHistoryState
+import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 import java.time.LocalDate
-
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 
 @Composable
 fun HomeScreen(navController: NavController? = null, username: String) {
@@ -34,6 +38,36 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         Quote.motivationalQuotes[index]
     }
 
+    val workoutSessionViewModel: WorkoutSessionViewModel = viewModel()
+    val context = LocalContext.current
+    workoutSessionViewModel.initApi(context)
+    workoutSessionViewModel.fetchWorkoutHistory()
+    workoutSessionViewModel.fetchExerciseHistory()
+
+    val workoutHistoryState = workoutSessionViewModel.historyState.collectAsState().value
+    val workoutDatesMap: Map<LocalDate, List<WorkoutSessionUI>> = when (workoutHistoryState) {
+        is WorkoutSessionHistoryState.Success -> {
+            workoutHistoryState.sessions.groupBy {
+                try {
+                    LocalDate.parse(it.workoutDate, DateTimeFormatter.ISO_DATE)
+                } catch (e: Exception) {
+                    null
+                }
+            }.filterKeys { it != null }.mapKeys { it.key!! }
+        }
+        else -> emptyMap()
+    }
+
+    val today = LocalDate.now()
+    var visibleMonth by remember { mutableStateOf(today.withDayOfMonth(1)) }
+    val daysInMonth = visibleMonth.lengthOfMonth()
+    val currentMonth = visibleMonth.monthValue
+    val currentYear = visibleMonth.year
+    val monthYearLabel = visibleMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -41,141 +75,161 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header with avatar
+        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Hey $username 👋", style = MaterialTheme.typography.headlineMedium)
+            val firstName = username.split(" ").first()
+            Text("Hey $firstName 👋", style = MaterialTheme.typography.headlineMedium)
 
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(48.dp)
-                    .clickable {
-                        navController?.navigate(AppRoutes.PROFILE)
-                    }
+                    .clickable { navController?.navigate(AppRoutes.PROFILE) }
             ) {
-                Box(Modifier.wrapContentSize(Alignment.Center)) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text = username.first().uppercaseChar().toString(),
                         fontSize = 24.sp,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.align(Alignment.Center)
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
         }
 
-        // Today's Workout card
-        Card(
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Calendar Header
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { navController?.navigate("workout") }
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Today's Workout", style = MaterialTheme.typography.titleMedium)
-                Text("Leg Day • 5 exercises • 45 mins", style = MaterialTheme.typography.bodyMedium)
-                Text("Tap to continue ➡️", style = MaterialTheme.typography.bodySmall)
+            IconButton(onClick = { visibleMonth = visibleMonth.minusMonths(1) }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Previous month")
+            }
+            Text(
+                text = monthYearLabel,
+                style = MaterialTheme.typography.titleLarge
+            )
+            IconButton(onClick = { visibleMonth = visibleMonth.plusMonths(1) }) {
+                Icon(Icons.Default.ArrowForward, contentDescription = "Next month")
             }
         }
 
-        // Stats row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatBox("🔥", "Streak", "4 days")
-            StatBox("📈", "Level", "Beginner")
-            StatBox("⚖️", "Calories", "1150 kcal")
-        }
-
-        // Quick links
-        Text("Quick Access", style = MaterialTheme.typography.titleMedium)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            QuickButton("Workouts") { navController?.navigate("workout") }
-            QuickButton("Exercises") { navController?.navigate("exercises") }
-            QuickButton("Messages") { navController?.navigate("messages") }
-            //QuickButton("Match") { navController?.navigate("find_match") }
-        }
-
-        // Matches preview (placeholder for now)
-        Text("Suggested Matches", style = MaterialTheme.typography.titleMedium)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-//            var context = LocalContext.current
-//            val viewModel = remember { MatchingViewModel() }
-//            viewModel.fetchUserMatches(context)
-//            val matches = viewModel.matches
-
-            MatchChip("Tom")
-            MatchChip("Sara")
-            MatchChip("+ Find more") {
-                navController?.navigate("find_match")
+        // Day of Week Header
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            for (i in 0..6) {
+                val dayName = LocalDate.of(2023, 1, 2 + i) // Monday start
+                    .dayOfWeek
+                    .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                Box(
+                    modifier = Modifier.size(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(dayName, style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
 
-        // Motivational quote
+        // Calendar Grid
+        for (week in 0 until daysInMonth step 7) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (dayOffset in 0 until 7) {
+                    val day = week + dayOffset + 1
+                    if (day <= daysInMonth) {
+                        val date = LocalDate.of(currentYear, currentMonth, day)
+                        val isMarked = workoutDatesMap.containsKey(date)
+                        val isToday = date == today
+
+                        val bgColor = when {
+                            isMarked -> MaterialTheme.colorScheme.primary
+                            isToday -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> Color.LightGray.copy(alpha = 0.3f)
+                        }
+
+                        val textColor = when {
+                            isMarked -> MaterialTheme.colorScheme.onPrimary
+                            isToday -> MaterialTheme.colorScheme.onSecondaryContainer
+                            else -> Color.DarkGray
+                        }
+
+                        Surface(
+                            shape = CircleShape,
+                            color = bgColor,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable {
+                                    if (isMarked) {
+                                        selectedDate = date
+                                        showDialog = true
+                                    }
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(text = day.toString(), color = textColor)
+                                    if (isMarked) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Workout done",
+                                            tint = textColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.size(40.dp))
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Motivation
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-                Text("💪 Motivation", style = MaterialTheme.typography.titleMedium)
+                Text("\uD83D\uDCAA Motivation", style = MaterialTheme.typography.titleMedium)
                 Text("\"${quoteOfTheDay.text}\"", style = MaterialTheme.typography.bodySmall)
                 quoteOfTheDay.author?.let {
                     Text("- $it", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
-
     }
-}
 
-@Composable
-fun StatBox(emoji: String, label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(emoji, style = MaterialTheme.typography.headlineMedium)
-        Text(label, style = MaterialTheme.typography.labelMedium)
-        Text(value, style = MaterialTheme.typography.bodySmall)
-    }
-}
-
-@Composable
-fun QuickButton(label: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        shape = CircleShape,
-        modifier = Modifier
-            .height(40.dp)
-    ) {
-        Text(label)
-    }
-}
-
-@Composable
-fun MatchChip(name: String, onClick: () -> Unit = {}) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondary,
-        modifier = Modifier
-            .padding(vertical = 4.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Text(
-            text = name,
-            color = MaterialTheme.colorScheme.onSecondary,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+    // Workout Summary Dialog
+    if (showDialog && selectedDate != null) {
+        val sessions = workoutDatesMap[selectedDate] ?: emptyList()
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Workouts on ${selectedDate}") },
+            text = {
+                if (sessions.isEmpty()) {
+                    Text("No workouts found.")
+                } else {
+                    Column {
+                        sessions.forEach {
+                            Text("• ${it.workoutName} (${it.duration} min)")
+                        }
+                    }
+                }
+            }
         )
     }
 }
-
-
-
 
 @Preview(showBackground = true)
 @Composable
