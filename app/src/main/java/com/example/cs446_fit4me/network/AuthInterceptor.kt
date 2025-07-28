@@ -8,14 +8,14 @@ import okhttp3.Response
 
 class AuthInterceptor(private val context: Context) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = TokenManager.getToken(context)
+        // Use in-memory token first (set at login)
+        val token = ApiClient.currentToken ?: TokenManager.getToken(context)
 
         Log.d("JWT_DEBUG", "Token in interceptor: $token")
 
         val requestBuilder = chain.request().newBuilder()
 
         if (!token.isNullOrBlank()) {
-
             requestBuilder.addHeader("Authorization", token)
             Log.d("JWT_DEBUG", "Authorization header set with token: $token")
         } else {

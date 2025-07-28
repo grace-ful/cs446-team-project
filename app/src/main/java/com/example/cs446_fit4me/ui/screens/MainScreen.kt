@@ -2,6 +2,7 @@ package com.example.cs446_fit4me.ui.screens
 
 import MessagesViewModel
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,39 +33,60 @@ import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.viewmodel.MatchingViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
-import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
+import com.example.cs446_fit4me.ui.screens.WorkoutSessionScreen
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
+import retrofit2.HttpException
 
+private const val TAG = "MainScreen"
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
+    Log.d(TAG, ">>> Composing MainScreen")
+
     var userName by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+
     val context = LocalContext.current
     val userPrefs = remember { com.example.cs446_fit4me.datastore.UserPreferencesManager(context) }
     val userId by userPrefs.userIdFlow.collectAsState(initial = null)
-
 
     // Tab state for bottom nav (KEY)
     var selectedTab by remember { mutableStateOf(BottomNavItem.Home.route) }
 
     // Fetch user profile on launch
     LaunchedEffect(Unit) {
+        Log.d(TAG, "LaunchedEffect(Unit): fetching user profile (getUserById)")
         try {
             val user = ApiClient.getUserApi(context).getUserById()
+            Log.d(TAG, "getUserById success: id=${user.id}, name=${user.name}")
             userName = user.name
         } catch (e: Exception) {
+            when (e) {
+                is HttpException -> {
+                    Log.e(TAG, "getUserById HTTP error: code=${e.code()}, msg=${e.message()}", e)
+                    if (e.code() == 401) {
+                        Log.w(TAG, "HTTP 401 detected in MainScreen -> forcing logout()")
+                        onLogout()   // <-- comment this out if you only want logs
+                        return@LaunchedEffect
+                    }
+                }
+                else -> Log.e(TAG, "getUserById failed: ${e.message}", e)
+            }
             error = e.localizedMessage ?: "Failed to load user info"
         }
     }
+
+    Log.d(TAG, "userName=$userName, error=$error, userIdFromPrefs=$userId")
 
     if (userName == null) {
         // Loading or error indicator
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (error != null) {
+                Log.d(TAG, "Showing error UI: $error")
                 Text(text = error ?: "Error loading user.")
             } else {
+                Log.d(TAG, "Showing loading spinner while fetching profile...")
                 CircularProgressIndicator()
             }
         }
@@ -73,12 +95,13 @@ fun MainScreen(onLogout: () -> Unit) {
 
     val navController = rememberNavController()
     val workoutViewModel: WorkoutViewModel = viewModel()
+    val workoutSessionViewModel: WorkoutSessionViewModel = viewModel()
     val bottomNavItems = listOf(
         BottomNavItem.Messages,
         BottomNavItem.FindMatch,
         BottomNavItem.Home,
         BottomNavItem.Workout,
-        BottomNavItem.Profile
+        BottomNavItem.History
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -99,8 +122,10 @@ fun MainScreen(onLogout: () -> Unit) {
 
     // Always update the selectedTab when navigation changes via gestures or navController
     LaunchedEffect(currentRoute) {
+        Log.d(TAG, "Route changed to: $currentRoute")
         if (bottomNavItems.any { it.route == currentRoute }) {
             selectedTab = currentRoute
+            Log.d(TAG, "selectedTab updated to $selectedTab")
         }
     }
 
@@ -110,9 +135,15 @@ fun MainScreen(onLogout: () -> Unit) {
                 TopBar(
                     title = if (currentRoute.startsWith("chat/")) "Chat" else currentScreenTitle,
                     canNavigateBack = canNavigateBack,
-                    onNavigateUp = { navController.navigateUp() },
+                    onNavigateUp = {
+                        Log.d(TAG, "TopBar onNavigateUp()")
+                        navController.navigateUp()
+                    },
                     onSettingsClick = if (currentRoute == BottomNavItem.Home.route) {
-                        { navController.navigate("settings") }
+                        {
+                            Log.d(TAG, "Navigating to settings")
+                            navController.navigate("settings")
+                        }
                     } else {
                         null
                     }
@@ -125,11 +156,12 @@ fun MainScreen(onLogout: () -> Unit) {
                 items = bottomNavItems,
                 selectedRoute = selectedTab,
                 onTabSelected = { route ->
+                    Log.d(TAG, "BottomNav tab selected: $route")
                     selectedTab = route
                     navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        popUpTo(navController.graph.startDestinationId) { inclusive = false/*saveState = true*/ }
                         launchSingleTop = true
-                        restoreState = true
+                        restoreState = false
                     }
                 }
             )
@@ -138,6 +170,7 @@ fun MainScreen(onLogout: () -> Unit) {
             .fillMaxSize()
             .imePadding()
     ) { innerPadding ->
+        Log.d(TAG, "Rendering NavHost, startDestination=${BottomNavItem.Home.route}")
         NavHost(
             navController = navController,
             startDestination = BottomNavItem.Home.route,
@@ -146,22 +179,26 @@ fun MainScreen(onLogout: () -> Unit) {
                 .consumeWindowInsets(innerPadding)
         ) {
             composable(BottomNavItem.Home.route) {
+                Log.d(TAG, "Composing HomeScreen")
                 HomeScreen(navController, username = userName!!)
             }
 
-            // MESSAGES TAB: uses MessagesViewModel with SimpleUser
             composable(BottomNavItem.Messages.route) {
+                Log.d(TAG, "Composing MessagesScreen")
                 val context = LocalContext.current
-                // Pass ApiClient dependency if required by your MessagesViewModel
                 val api = remember { ApiClient.getChatApi(context) }
                 val viewModel = remember { MessagesViewModel(api) }
                 MessagesScreen(navController = navController, viewModel = viewModel)
             }
 
             composable(BottomNavItem.FindMatch.route) {
+                Log.d(TAG, "Composing MatchingScreen")
                 val context = LocalContext.current
-                val viewModel: MatchingViewModel = viewModel() // Use viewModel() for state preservation
-                LaunchedEffect(Unit) { viewModel.fetchUserMatches(context) }
+                val viewModel: MatchingViewModel = viewModel()
+                LaunchedEffect(Unit) {
+                    Log.d(TAG, "MatchingScreen -> fetchUserMatches()")
+                    viewModel.fetchUserMatches(context)
+                }
 
                 MatchingScreen(
                     viewModel = viewModel,
@@ -170,36 +207,67 @@ fun MainScreen(onLogout: () -> Unit) {
                 )
             }
 
-            composable(BottomNavItem.Profile.route) { ProfileScreen() }
+            composable(AppRoutes.PROFILE) {
+                Log.d(TAG, "Composing ProfileScreen")
+                ProfileScreen()
+            }
+            composable(BottomNavItem.History.route) {
+                val context = LocalContext.current
+
+                LaunchedEffect(Unit) {
+                    workoutSessionViewModel.initApi(context)
+                    workoutSessionViewModel.fetchWorkoutHistory()
+                    workoutSessionViewModel.fetchExerciseHistory()
+                }
+
+                HistoryScreen(viewModel = workoutSessionViewModel)
+            }
 
             composable(AppRoutes.SETTINGS) {
+                Log.d(TAG, "Composing SettingsMainScreen")
                 SettingsMainScreen(navController, onLogout)
             }
-            composable(AppRoutes.EXERCISES) { ExercisesScreen(navController) }
+
+            composable(AppRoutes.EXERCISES) {
+                Log.d(TAG, "Composing ExercisesScreen")
+                ExercisesScreen(navController)
+            }
 
             composable(AppRoutes.CREATE_WORKOUT) {
+                Log.d(TAG, "Composing CreateWorkoutScreen")
                 CreateWorkoutScreen(
                     navController = navController,
                     workoutViewModel = workoutViewModel,
-                    onAddExerciseClicked = { navController.navigate("select_exercise") },
+                    onAddExerciseClicked = {
+                        Log.d(TAG, "CreateWorkoutScreen -> navigate to select_exercise")
+                        navController.navigate("select_exercise")
+                    },
                     userId = userId,
-                    onCreateWorkout = { name -> /* TODO */ }
+                    onCreateWorkout = { name -> Log.d(TAG, "onCreateWorkout called with name=$name") }
                 )
             }
+
             composable(BottomNavItem.Workout.route) {
+                Log.d(TAG, "Composing WorkoutScreen")
                 WorkoutScreen(
                     navController = navController,
                     workoutViewModel = workoutViewModel,
+                    workoutSessionViewModel = workoutSessionViewModel,
                     onEditWorkout = { workout ->
+                        Log.d(TAG, "WorkoutScreen -> Edit workout: ${workout.id}")
                         navController.navigate("edit_workout/${workout.id}")
                     }
                 )
             }
 
             composable(AppRoutes.SELECT_EXERCISE) {
+                Log.d(TAG, "Composing SelectExerciseScreen")
                 val context = LocalContext.current
                 val isLoading by workoutViewModel.isLoadingExercises
-                LaunchedEffect(Unit) { workoutViewModel.fetchAllExerciseTemplates(context) }
+                LaunchedEffect(Unit) {
+                    Log.d(TAG, "SelectExerciseScreen -> fetchAllExerciseTemplates()")
+                    workoutViewModel.fetchAllExerciseTemplates(context)
+                }
                 if (isLoading) {
                     Box(
                         modifier = Modifier
@@ -207,6 +275,7 @@ fun MainScreen(onLogout: () -> Unit) {
                             .padding(32.dp),
                         contentAlignment = Alignment.Center
                     ) {
+                        Log.d(TAG, "SelectExerciseScreen loading spinner")
                         CircularProgressIndicator()
                     }
                 } else {
@@ -217,20 +286,24 @@ fun MainScreen(onLogout: () -> Unit) {
                     )
                 }
             }
+
             composable(
                 "edit_workout/{workoutId}",
                 arguments = listOf(navArgument("workoutId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val workoutId = backStackEntry.arguments?.getString("workoutId")
+                Log.d(TAG, "Composing EditWorkoutScreen for id=$workoutId")
+
                 val workoutToEdit = workoutViewModel.myWorkouts.find { it.id == workoutId }
                     ?: workoutViewModel.standardWorkouts.find { it.id == workoutId }
+
                 if (workoutToEdit != null) {
                     EditWorkoutScreen(
                         navController = navController,
                         workoutToEdit = workoutToEdit,
                         onSave = { updatedWorkout ->
+                            Log.d(TAG, "EditWorkoutScreen -> onSave for id=${updatedWorkout.id}")
                             workoutViewModel.updateWorkout(updatedWorkout)
-                            // KEY: update tab and navigate
                             selectedTab = BottomNavItem.Workout.route
                             navController.navigate(BottomNavItem.Workout.route) {
                                 popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -240,6 +313,7 @@ fun MainScreen(onLogout: () -> Unit) {
                         }
                     )
                 } else {
+                    Log.w(TAG, "Workout not found for id=$workoutId")
                     Box(
                         Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -251,10 +325,10 @@ fun MainScreen(onLogout: () -> Unit) {
 
             composable("workout_session/{sessionId}") { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+                Log.d(TAG, "Composing WorkoutSessionScreen for sessionId=$sessionId")
                 WorkoutSessionScreen(
                     sessionId = sessionId,
                     navController = navController,
-                    viewModel = remember { WorkoutSessionViewModel() }
                 )
             }
 
@@ -284,8 +358,8 @@ fun MainScreen(onLogout: () -> Unit) {
                 val peerUserId = backStackEntry.arguments?.getString("peerUserId") ?: return@composable
                 val context = LocalContext.current
                 val currentUserId = UserManager.getUserId(context)!!
+                Log.d(TAG, "Composing ChatScreen with peerUserId=$peerUserId, currentUserId=$currentUserId")
 
-                // Provide ApiService and SocketManager for ViewModel
                 val api = remember { ApiClient.getChatApi(context) }
                 val socketManager = remember {
                     com.example.cs446_fit4me.chat.ChatSocketManager(
@@ -305,11 +379,18 @@ fun MainScreen(onLogout: () -> Unit) {
 
                 ChatScreen(
                     messages = messages,
-                    onSend = { viewModel.sendMessage(it) },
+                    onSend = {
+                        Log.d(TAG, "ChatScreen -> sendMessage: $it")
+                        viewModel.sendMessage(it)
+                    },
                     currentUserId = currentUserId,
-                    onBack = { navController.navigateUp() }
+                    onBack = {
+                        Log.d(TAG, "ChatScreen -> navigateUp()")
+                        navController.navigateUp()
+                    }
                 )
             }
+
             composable(AppRoutes.CHANGE_PASSWORD) { ChangePasswordScreen(navController) }
             composable(AppRoutes.NOTIFICATION_SETTINGS) { NotificationSettingsScreen(navController) }
             composable(AppRoutes.UNITS) { UnitsScreen(navController) }

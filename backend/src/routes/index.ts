@@ -20,7 +20,7 @@ router.get("/", (req: Request, res: Response) => {
 router.use("/user", userRouter);
 router.use("/workout-template", workoutTemplateRouter);
 router.use("/exercise-template", exerciseTemplateRouter);
-router.use("/exercise-sessions", exerciseSessionRouter);
+router.use("/exercise-session", exerciseSessionRouter);
 router.use("/exercise-set", exerciseSetRouter);
 router.use("/workout-sessions", workoutSessionRouter);
 router.use("/pr", prRouter);

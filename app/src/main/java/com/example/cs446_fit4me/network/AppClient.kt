@@ -1,11 +1,9 @@
 package com.example.cs446_fit4me.network
 
-import WorkoutSessionApiService
 import android.content.Context
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 
 object ApiClient {
     const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD
@@ -15,6 +13,12 @@ object ApiClient {
     // For local testing (comment after done testing)
 //    const val BASE_URL = "http://localhost:3000/api/"
 //    const val SOCKET_URL = "http://localhost:3000"
+
+    var currentToken: String? = null
+
+    fun setToken(token: String?) {
+        currentToken = token
+    }
 
     // Create Retrofit instance with AuthInterceptor
     private fun createRetrofit(context: Context): Retrofit {
