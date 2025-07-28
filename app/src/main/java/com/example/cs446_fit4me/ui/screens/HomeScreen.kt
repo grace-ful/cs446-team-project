@@ -124,7 +124,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         // Day of Week Header
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             for (i in 0..6) {
-                val dayName = LocalDate.of(2023, 1, 2 + i) // Monday start
+                val dayName = LocalDate.of(2023, 1, 1 + i)
                     .dayOfWeek
                     .getDisplayName(TextStyle.SHORT, Locale.getDefault())
                 Box(
@@ -136,13 +136,21 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             }
         }
 
-        // Calendar Grid
-        for (week in 0 until daysInMonth step 7) {
+        // Calendar Grid with correct alignment
+        val firstDayOfMonth = LocalDate.of(currentYear, currentMonth, 1)
+        val startDayOfWeekIndex = firstDayOfMonth.dayOfWeek.value % 7
+        val totalCells = daysInMonth + startDayOfWeekIndex
+        val weeks = (totalCells + 6) / 7
+        var dayCounter = 1
+
+        for (week in 0 until weeks) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                for (dayOffset in 0 until 7) {
-                    val day = week + dayOffset + 1
-                    if (day <= daysInMonth) {
-                        val date = LocalDate.of(currentYear, currentMonth, day)
+                for (dow in 0 until 7) {
+                    val cellIndex = week * 7 + dow
+                    if (cellIndex < startDayOfWeekIndex || dayCounter > daysInMonth) {
+                        Spacer(modifier = Modifier.size(40.dp))
+                    } else {
+                        val date = LocalDate.of(currentYear, currentMonth, dayCounter)
                         val isMarked = workoutDatesMap.containsKey(date)
                         val isToday = date == today
 
@@ -172,7 +180,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(text = day.toString(), color = textColor)
+                                    Text(text = dayCounter.toString(), color = textColor)
                                     if (isMarked) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
@@ -184,8 +192,7 @@ fun HomeScreen(navController: NavController? = null, username: String) {
                                 }
                             }
                         }
-                    } else {
-                        Spacer(modifier = Modifier.size(40.dp))
+                        dayCounter++
                     }
                 }
             }
