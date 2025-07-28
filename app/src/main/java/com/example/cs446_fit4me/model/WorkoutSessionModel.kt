@@ -61,7 +61,8 @@ data class ExerciseSetUI(
 // ======================
 
 data class WorkoutSessionUpdateRequest(
-    val exerciseSessions: List<ExerciseSessionUpdateRequest>
+    val exerciseSessions: List<ExerciseSessionUpdateRequest>,
+    val duration: Int? = null
 )
 
 data class ExerciseSessionUpdateRequest(
@@ -122,6 +123,7 @@ fun ExerciseSetResponse.toExerciseSetUI(): ExerciseSetUI {
 fun WorkoutSessionUI.toFilteredUpdateRequest(durationMillis: Long): WorkoutSessionUpdateRequest {
     val durationSeconds = (durationMillis / 1000L).toInt()
     return WorkoutSessionUpdateRequest(
+        duration = durationSeconds,
         exerciseSessions = this.exerciseSessions.mapNotNull { ex ->
             val validSets = ex.sets.filter { set ->
                 set.isComplete && set.reps > 0 && (set.weight ?: 0f) > 0f

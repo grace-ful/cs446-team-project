@@ -137,6 +137,10 @@ fun HistoryScreen(viewModel: WorkoutSessionViewModel) {
                     userId = "",
                     weight = it,
                     duration = null,
+                    reps = selectedExerciseHistory!!.recentSets
+                        .filter { set -> set.weight == it }
+                        .maxByOrNull { set -> set.reps }
+                        ?.reps ?: 0,
                     date = selectedExerciseHistory!!.prDate ?: ""
                 )
             },
