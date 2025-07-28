@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,11 +41,14 @@ fun WorkoutSessionScreen(
         }
     }
 
+    // Pause state
+    var isPaused by remember { mutableStateOf(false) }
 
     LaunchedEffect(sessionId) {
         viewModel.resetSessionDeleted()
         viewModel.resetTimer()
         viewModel.startTimer()
+        isPaused = false
     }
 
     LaunchedEffect(Unit) {
@@ -102,6 +107,22 @@ fun WorkoutSessionScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         letterSpacing = 2.sp
                     )
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            if (isPaused) {
+                                viewModel.resumeTimer()
+                            } else {
+                                viewModel.pauseTimer()
+                            }
+                            isPaused = !isPaused
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                            contentDescription = if (isPaused) "Resume Timer" else "Pause Timer"
+                        )
+                    }
                 }
             }
         }
@@ -319,8 +340,6 @@ fun SetRow(
                 enabled = isCheckboxEnabled
             )
 
-
-
             // Delete Set
             IconButton(onClick = onDelete) {
                 Icon(
@@ -332,5 +351,3 @@ fun SetRow(
         }
     }
 }
-
-
