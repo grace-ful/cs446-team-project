@@ -1,11 +1,9 @@
 package com.example.cs446_fit4me.network
 
-import WorkoutSessionApiService
 import android.content.Context
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 
 object ApiClient {
     const val BASE_URL = "https://cs446-team-project-production.up.railway.app/api/" // PROD

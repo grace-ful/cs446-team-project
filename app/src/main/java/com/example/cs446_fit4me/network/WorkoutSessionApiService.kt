@@ -1,4 +1,5 @@
-import com.example.cs446_fit4me.model.ExerciseSessionResponse
+package com.example.cs446_fit4me.network
+
 import com.example.cs446_fit4me.model.WorkoutSessionResponse
 import com.example.cs446_fit4me.model.WorkoutSessionUpdateRequest
 import retrofit2.http.Body
