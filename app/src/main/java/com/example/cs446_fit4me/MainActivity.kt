@@ -14,6 +14,27 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import com.google.android.libraries.places.api.Places
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.*
+import com.example.cs446_fit4me.chat.ChatNotificationHelper
+
+@Composable
+fun NotificationPermissionRequester() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissionLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            // You can react to the result here if you want
+        }
+
+        LaunchedEffect(Unit) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+}
 
 
 class MainActivity : ComponentActivity() {
@@ -24,6 +45,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        ChatNotificationHelper.createChannel(this)
 
         if (!Places.isInitialized()) {
             Places.initialize(applicationContext, "AIzaSyDp7yaybG_NXQ0nPFixhdGe0SMFnd7iP5M")
@@ -46,6 +68,7 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
+            NotificationPermissionRequester()
             CS446fit4meTheme {
                 key(resetKey) {
                     AppEntryPoint(

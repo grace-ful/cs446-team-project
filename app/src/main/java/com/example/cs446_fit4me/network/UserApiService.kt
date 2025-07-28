@@ -31,6 +31,9 @@ interface UserApiService {
         @Body updateData: UpdateUserRequest
     ): UserResponse
 
+    @GET("user/by-id/{id}")
+    suspend fun getUserByIdByPath(@Path("id") userId: String): UserResponse
+
     @PUT("user/update-match-strategy")
     suspend fun updateMatchStrategy(
         @Body body: UpdateMatchStrategyRequest
