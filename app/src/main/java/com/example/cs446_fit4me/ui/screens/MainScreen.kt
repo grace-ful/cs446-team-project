@@ -98,8 +98,8 @@ fun MainScreen(onLogout: () -> Unit) {
     val bottomNavItems = listOf(
         BottomNavItem.Messages,
         BottomNavItem.FindMatch,
-        BottomNavItem.History,
         BottomNavItem.Home,
+        BottomNavItem.History,
         BottomNavItem.Workout
     )
 
