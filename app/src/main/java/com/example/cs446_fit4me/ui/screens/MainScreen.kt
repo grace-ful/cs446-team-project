@@ -94,9 +94,11 @@ fun MainScreen(onLogout: () -> Unit) {
 
     val navController = rememberNavController()
     val workoutViewModel: WorkoutViewModel = viewModel()
+    val workoutSessionViewModel: WorkoutSessionViewModel = viewModel()
     val bottomNavItems = listOf(
         BottomNavItem.Messages,
         BottomNavItem.FindMatch,
+        BottomNavItem.History,
         BottomNavItem.Home,
         BottomNavItem.Workout
     )
@@ -145,9 +147,9 @@ fun MainScreen(onLogout: () -> Unit) {
                     Log.d(TAG, "BottomNav tab selected: $route")
                     selectedTab = route
                     navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        popUpTo(navController.graph.startDestinationId) { inclusive = false/*saveState = true*/ }
                         launchSingleTop = true
-                        restoreState = true
+                        restoreState = false
                     }
                 }
             )
@@ -197,6 +199,17 @@ fun MainScreen(onLogout: () -> Unit) {
                 Log.d(TAG, "Composing ProfileScreen")
                 ProfileScreen()
             }
+            composable(BottomNavItem.History.route) {
+                val context = LocalContext.current
+
+                LaunchedEffect(Unit) {
+                    workoutSessionViewModel.initApi(context)
+                    workoutSessionViewModel.fetchWorkoutHistory()
+                    workoutSessionViewModel.fetchExerciseHistory()
+                }
+
+                HistoryScreen(viewModel = workoutSessionViewModel)
+            }
 
             composable(AppRoutes.SETTINGS) {
                 Log.d(TAG, "Composing SettingsMainScreen")
@@ -227,6 +240,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 WorkoutScreen(
                     navController = navController,
                     workoutViewModel = workoutViewModel,
+                    workoutSessionViewModel = workoutSessionViewModel,
                     onEditWorkout = { workout ->
                         Log.d(TAG, "WorkoutScreen -> Edit workout: ${workout.id}")
                         navController.navigate("edit_workout/${workout.id}")
@@ -303,7 +317,6 @@ fun MainScreen(onLogout: () -> Unit) {
                 WorkoutSessionScreen(
                     sessionId = sessionId,
                     navController = navController,
-                    viewModel = remember { WorkoutSessionViewModel() }
                 )
             }
 

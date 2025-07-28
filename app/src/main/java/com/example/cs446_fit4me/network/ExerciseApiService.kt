@@ -3,6 +3,21 @@ package com.example.cs446_fit4me.network
 import com.example.cs446_fit4me.model.ExerciseTemplate
 import retrofit2.http.*
 import com.example.cs446_fit4me.model.CreateExerciseRequest
+import com.example.cs446_fit4me.model.ExerciseSessionResponse
+import com.example.cs446_fit4me.model.ExerciseSetResponse
+
+data class GroupedExerciseHistoryResponse(
+    val exerciseId: String,
+    val exerciseName: String,
+    val sessions: List<ExerciseSessionHistory>
+)
+
+data class ExerciseSessionHistory(
+    val sessionId: String,
+    val date: String,
+    val sets: List<ExerciseSetResponse>
+)
+
 
 interface ExerciseApiService {
 
@@ -32,4 +47,8 @@ interface ExerciseApiService {
     // DELETE /exercise-template/{id}
     @DELETE("exercise-template/{id}")
     suspend fun deleteExercise(@Path("id") id: String): retrofit2.Response<Unit>
+
+    @GET("exercise-session/by-user")
+    suspend fun getExerciseSessionsByUser(): List<GroupedExerciseHistoryResponse>
+
 }
