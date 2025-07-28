@@ -19,6 +19,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import com.example.cs446_fit4me.chat.ChatNotificationHelper
 
 @Composable
 fun NotificationPermissionRequester() {
@@ -44,6 +45,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        ChatNotificationHelper.createChannel(this)
 
         if (!Places.isInitialized()) {
             Places.initialize(applicationContext, "AIzaSyDp7yaybG_NXQ0nPFixhdGe0SMFnd7iP5M")
