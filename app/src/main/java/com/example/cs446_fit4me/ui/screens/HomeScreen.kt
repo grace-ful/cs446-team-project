@@ -29,7 +29,7 @@ import com.example.cs446_fit4me.datastore.UserManager
 import com.example.cs446_fit4me.ui.viewmodel.*
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.navigation.BottomNavItem
-import com.example.cs446_fit4me.ui.components.ChatNotificationHelper
+import com.example.cs446_fit4me.chat.ChatNotificationHelper
 import java.time.LocalDate
 
 
@@ -45,16 +45,17 @@ fun HomeScreen(navController: NavController? = null, username: String) {
     LaunchedEffect(userId) {
         if (userId != null) {
             GlobalChatSocketManager.init(userId)
-            GlobalChatSocketManager.setOnGlobalMessageReceived { msg ->
+            GlobalChatSocketManager.setOnGlobalMessageReceived(context) { msg ->
                 if (!GlobalChatSocketManager.isChatOpenForPeer(msg.senderId)) {
                     ChatNotificationHelper.showChatNotification(
-                        context = context.applicationContext, // Now it's safe!
-                        senderName = msg.senderId,
+                        context = context.applicationContext, // safer for background
+                        senderName = msg.senderId, // Or replace with contact name
                         message = msg.content,
                         peerUserId = msg.senderId
                     )
                 }
             }
+
         }
     }
 

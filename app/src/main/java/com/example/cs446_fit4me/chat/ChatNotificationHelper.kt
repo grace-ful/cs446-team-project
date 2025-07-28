@@ -1,4 +1,4 @@
-package com.example.cs446_fit4me.ui.components
+package com.example.cs446_fit4me.chat
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

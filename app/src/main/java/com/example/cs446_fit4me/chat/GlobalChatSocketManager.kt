@@ -2,7 +2,6 @@ package com.example.cs446_fit4me.chat
 
 import android.content.Context
 import com.example.cs446_fit4me.model.ChatMessage
-import com.example.cs446_fit4me.ui.components.ChatNotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,8 +19,22 @@ object GlobalChatSocketManager {
         socketManager?.connect()
     }
 
-    fun setOnGlobalMessageReceived(callback: (ChatMessage) -> Unit) {
+    /**
+     * Updated to show a notification if the user is not actively chatting with the sender.
+     */
+    fun setOnGlobalMessageReceived(context: Context, callback: (ChatMessage) -> Unit) {
         socketManager?.setOnMessageReceived { msg ->
+            // Show notification if this chat is not currently open
+            if (!isChatOpenForPeer(msg.senderId)) {
+                ChatNotificationHelper.showChatNotification(
+                    context = context,
+                    senderName = "New Message", // Replace with a proper name if available
+                    message = msg.content,
+                    peerUserId = msg.senderId
+                )
+            }
+
+            // Still pass to UI layer
             callback(msg)
         }
     }
