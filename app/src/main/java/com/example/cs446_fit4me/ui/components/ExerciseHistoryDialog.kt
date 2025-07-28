@@ -50,7 +50,7 @@ fun PRRow(pr: PRResponse?) {
         Text("🏆", fontSize = 24.sp)
         Spacer(Modifier.width(8.dp))
         Text(
-            "${pr.weight.toInt()} lb x ${pr.duration ?: ""}", // duration is rep count in this model
+            "${pr.weight.toInt()} lb x ${pr.reps ?: ""}", // duration is rep count in this model
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.bodyLarge
         )
@@ -95,7 +95,7 @@ fun ExpandableHistoryCard(session: ExerciseSessionHistoryResponse) {
             if (expanded) {
                 session.sets.forEachIndexed { idx, set ->
                     Text(
-                        text = "${idx + 1}. ${formatSetInfo(set.weight, set.reps)}",
+                        text = "${idx + 1}) ${formatSetInfo(set.weight, set.reps)}",
                         modifier = Modifier.padding(start = 32.dp, bottom = 4.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )

@@ -61,7 +61,8 @@ data class ExerciseSetUI(
 // ======================
 
 data class WorkoutSessionUpdateRequest(
-    val exerciseSessions: List<ExerciseSessionUpdateRequest>
+    val exerciseSessions: List<ExerciseSessionUpdateRequest>,
+    val duration: Int? = null
 )
 
 data class ExerciseSessionUpdateRequest(
@@ -115,25 +116,36 @@ fun ExerciseSetResponse.toExerciseSetUI(): ExerciseSetUI {
         reps = this.reps,
         weight = this.weight,
         duration = this.duration,
-        isComplete = this.isComplete ?: false
+        isComplete = this.isComplete == true
     )
 }
 
-fun WorkoutSessionUI.toUpdateRequest(): WorkoutSessionUpdateRequest {
+fun WorkoutSessionUI.toFilteredUpdateRequest(durationMillis: Long): WorkoutSessionUpdateRequest {
+    val durationSeconds = (durationMillis / 1000L).toInt()
     return WorkoutSessionUpdateRequest(
-        exerciseSessions = this.exerciseSessions.map { ex ->
-            ExerciseSessionUpdateRequest(
-                id = ex.id,
-                sets = ex.sets.map { set ->
-                    ExerciseSetUpdateRequest(
-                        id = set.id,
-                        reps = set.reps,
-                        weight = set.weight,
-                        duration = set.duration,
-                        isCompleted = set.isComplete
-                    )
-                }
-            )
+        duration = durationSeconds,
+        exerciseSessions = this.exerciseSessions.mapNotNull { ex ->
+            val validSets = ex.sets.filter { set ->
+                set.isComplete && set.reps > 0 && (set.weight ?: 0f) > 0f
+            }
+            if (validSets.isEmpty()) {
+                null // Exclude exercises with no valid sets
+            } else {
+                ExerciseSessionUpdateRequest(
+                    id = ex.id,
+                    sets = validSets.map { set ->
+                        ExerciseSetUpdateRequest(
+                            id = set.id,
+                            reps = set.reps,
+                            weight = set.weight,
+                            duration = durationSeconds,
+                            isCompleted = set.isComplete
+                        )
+                    }
+                )
+            }
         }
     )
 }
+
+

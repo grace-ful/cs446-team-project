@@ -16,6 +16,7 @@ data class PRResponse(
     val userId: String,
     val weight: Float?,
     val duration: Int?,
+    val reps: Int,
     val date: String           // ISO date string
 )
 

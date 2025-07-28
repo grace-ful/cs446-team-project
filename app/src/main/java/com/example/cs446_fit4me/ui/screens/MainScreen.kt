@@ -32,7 +32,7 @@ import com.example.cs446_fit4me.ui.components.TopBar
 import com.example.cs446_fit4me.ui.viewmodel.MatchingViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutSessionViewModel
 import com.example.cs446_fit4me.ui.viewmodel.WorkoutViewModel
-import com.example.cs446_fit4me.ui.workout.WorkoutSessionScreen
+import com.example.cs446_fit4me.ui.screens.WorkoutSessionScreen
 import com.example.cs446_fit4me.ui.screens.settings_subscreens.*
 import retrofit2.HttpException
 

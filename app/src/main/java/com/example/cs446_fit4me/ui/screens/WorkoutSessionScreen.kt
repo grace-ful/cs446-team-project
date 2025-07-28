@@ -1,12 +1,10 @@
-package com.example.cs446_fit4me.ui.workout
+package com.example.cs446_fit4me.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -15,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +31,14 @@ fun WorkoutSessionScreen(
     val uiState by viewModel.uiState.collectAsState()
     val sessionDeleted by viewModel.sessionDeleted.collectAsState()
     var showQuitDialog by remember { mutableStateOf(false) }
+    val isSaveEnabled by remember(uiState.exerciseSessions) {
+        derivedStateOf {
+            uiState.exerciseSessions.any { ex ->
+                ex.sets.any { it.isComplete }
+            }
+        }
+    }
+
 
     LaunchedEffect(sessionId) {
         viewModel.resetSessionDeleted()
@@ -199,17 +204,19 @@ fun WorkoutSessionScreen(
 
             Button(
                 onClick = {
-                    val durationMillis = viewModel.stopTimer()
-                    viewModel.saveWorkoutSession {
+                    val durationMillis = viewModel.stopTimer() ?: 0L
+                    viewModel.saveWorkoutSession(durationMillis) {
                         navController.navigate("home") {
                             popUpTo("home") { inclusive = true }
                         }
                     }
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                enabled = isSaveEnabled
             ) {
                 Text("Save Workout")
             }
+
         }
     }
 
@@ -221,7 +228,7 @@ fun WorkoutSessionScreen(
                 TextButton(onClick = {
                     viewModel.stopTimer()
                     viewModel.resetTimer()
-                    viewModel.deleteWorkoutSession({ viewModel.setSessionDeleted() })
+                    viewModel.deleteWorkoutSession { viewModel.setSessionDeleted() }
                     showQuitDialog = false
                 }) { Text("Quit Workout") }
             },
@@ -246,6 +253,14 @@ fun SetRow(
     var repsText by remember { mutableStateOf(if (set.reps > 0) set.reps.toString() else "") }
     var weightText by remember { mutableStateOf(set.weight?.takeIf { it > 0 }?.toString() ?: "") }
 
+    // Checkbox enabled if both fields are non-empty and numeric
+    val isCheckboxEnabled by remember(repsText, weightText) {
+        derivedStateOf {
+            repsText.isNotBlank() && repsText.all { it.isDigit() } &&
+                    weightText.isNotBlank() && weightText.toDoubleOrNull() != null
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -257,16 +272,16 @@ fun SetRow(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Text("Set $setNumber", modifier = Modifier.width(60.dp))
 
+            // Reps Field
             OutlinedTextField(
                 value = repsText,
                 onValueChange = {
-                    repsText = it.filter { char -> char.isDigit() }  // Only digits
-                    onRepsChange(repsText.ifBlank { "0" }) // fallback to 0
+                    repsText = it.filter { char -> char.isDigit() } // Only digits
+                    onRepsChange(repsText.ifBlank { "0" })
                 },
                 label = { Text("Reps") },
                 modifier = Modifier
@@ -275,6 +290,7 @@ fun SetRow(
                 singleLine = true
             )
 
+            // Weight Field
             OutlinedTextField(
                 value = weightText,
                 onValueChange = {
@@ -290,11 +306,22 @@ fun SetRow(
                 singleLine = true
             )
 
+            LaunchedEffect(isCheckboxEnabled) {
+                if (!isCheckboxEnabled && set.isComplete) {
+                    onCompletionToggle(false)
+                }
+            }
+
+            // Checkbox (enabled only if valid input)
             Checkbox(
                 checked = set.isComplete,
-                onCheckedChange = onCompletionToggle
+                onCheckedChange = onCompletionToggle,
+                enabled = isCheckboxEnabled
             )
 
+
+
+            // Delete Set
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -305,3 +332,5 @@ fun SetRow(
         }
     }
 }
+
+
