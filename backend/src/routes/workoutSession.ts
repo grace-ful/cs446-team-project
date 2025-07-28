@@ -121,6 +121,10 @@ workoutSessionRouter.get('/by-id/:id', authMiddleware, async (req: AuthRequest, 
         },
       },
     })
+    if (!workoutSession) {
+      res.status(404).json({ error: 'WorkoutSession not found.' });
+    }
+    res.status(200).json(workoutSession);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
