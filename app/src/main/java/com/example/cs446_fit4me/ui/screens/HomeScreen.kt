@@ -17,7 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import com.example.cs446_fit4me.chat.GlobalChatSocketManager
-import com.example.cs446_fit4me.datastore.UserManager
+import com.example.cs446_fit4me.datastore.SessionManager
 import com.example.cs446_fit4me.model.*
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,13 +41,14 @@ fun HomeScreen(navController: NavController? = null, username: String) {
     }
 
     val context = LocalContext.current
-    val userId = UserManager.getUserId(context)
-    LaunchedEffect(userId) {
-        if (userId != null) {
-            GlobalChatSocketManager.init(userId)
-            GlobalChatSocketManager.setOnGlobalMessageReceived(context) { msg ->
-            }
+    LaunchedEffect(Unit) {
+        val userId = SessionManager(context).getUserId()
 
+        if (!userId.isNullOrBlank()) {
+            GlobalChatSocketManager.initWithSession(context)
+            GlobalChatSocketManager.setOnGlobalMessageReceived(context) { msg ->
+                // Optional: handle UI or ViewModel updates
+            }
         }
     }
 
