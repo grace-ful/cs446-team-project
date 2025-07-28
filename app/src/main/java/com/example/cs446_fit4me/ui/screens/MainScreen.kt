@@ -117,9 +117,9 @@ fun MainScreen(onLogout: () -> Unit) {
                 onTabSelected = { route ->
                     selectedTab = route
                     navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        popUpTo(navController.graph.startDestinationId) { inclusive = false/*saveState = true*/ }
                         launchSingleTop = true
-                        restoreState = true
+                        restoreState = false
                     }
                 }
             )
