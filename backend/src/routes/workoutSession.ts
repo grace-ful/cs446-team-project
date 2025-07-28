@@ -125,7 +125,7 @@ workoutSessionRouter.put(
           .json({ error: "Not authorized to update this session" });
       }
 
-      // Step 1: Update basic workout session fields
+      // Step 1: Update base session info
       await prisma.workoutSession.update({
         where: { id: sessionId },
         data: {
@@ -135,26 +135,37 @@ workoutSessionRouter.put(
         },
       });
 
-      // Step 2: Validate exerciseSessions ownership
+      // Step 2: Validate existing sessions
       const validSessions = await prisma.exerciseSession.findMany({
         where: {
-          id: { in: exerciseSessions.map((s: any) => s.id) },
+          id: { in: exerciseSessions.map((s: any) => s.id).filter(Boolean) },
           userId,
         },
         select: { id: true },
       });
-
       const validSessionIds = new Set(validSessions.map((s) => s.id));
 
-      // Step 3: Loop through sessions & sets
+      // Step 3: Handle each exercise session
       for (const session of exerciseSessions) {
-        const exerciseSessionId = session.id;
+        let exerciseSessionId = session.id;
 
-        if (!validSessionIds.has(exerciseSessionId)) continue;
+        // Create new session if missing
+        if (!exerciseSessionId) {
+          const newExerciseSession = await prisma.exerciseSession.create({
+            data: {
+              exerciseTemplateID: session.exerciseTemplateID,
+              userId,
+              workoutSessionId: sessionId,
+              date: new Date(workoutDate || new Date()),
+              notes: session.notes ?? "",
+            },
+          });
+          exerciseSessionId = newExerciseSession.id;
+        }
 
+        // Save sets (update or create)
         for (const set of session.sets) {
           if (set.id) {
-            // Update existing set
             await prisma.exerciseSet.update({
               where: { id: set.id },
               data: {
@@ -164,15 +175,12 @@ workoutSessionRouter.put(
               },
             });
           } else {
-            // Create new set
             await prisma.exerciseSet.create({
               data: {
                 reps: set.reps,
                 weight: set.weight,
                 duration: set.duration,
-                ExerciseSession: {
-                  connect: { id: exerciseSessionId },
-                },
+                exerciseSessionId,
               },
             });
           }
@@ -186,6 +194,7 @@ workoutSessionRouter.put(
     }
   }
 );
+
 
 // Delete session
 workoutSessionRouter.delete(
