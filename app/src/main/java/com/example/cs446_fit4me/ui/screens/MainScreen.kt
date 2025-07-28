@@ -99,8 +99,8 @@ fun MainScreen(onLogout: () -> Unit) {
         BottomNavItem.Messages,
         BottomNavItem.FindMatch,
         BottomNavItem.Home,
-        BottomNavItem.History,
-        BottomNavItem.Workout
+        BottomNavItem.Workout,
+        BottomNavItem.History
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

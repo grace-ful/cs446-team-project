@@ -1,5 +1,6 @@
 package com.example.cs446_fit4me.ui.screens
 
+import MessagesViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -21,9 +22,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import com.example.cs446_fit4me.model.*
 import com.example.cs446_fit4me.navigation.AppRoutes
+import com.example.cs446_fit4me.network.ApiClient
 import java.time.LocalDate
 
 
@@ -33,6 +36,10 @@ fun HomeScreen(navController: NavController? = null, username: String) {
         val index = LocalDate.now().dayOfYear % Quote.motivationalQuotes.size
         Quote.motivationalQuotes[index]
     }
+//    val context = LocalContext.current
+//    val api = remember { ApiClient.getChatApi(context) }
+//    val viewModel = remember { MessagesViewModel(api) }
+//    val users = viewModel.users.take(3)
 
     Column(
         modifier = Modifier
@@ -47,7 +54,8 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Hey $username 👋", style = MaterialTheme.typography.headlineMedium)
+            val firstName = username.split(" ").first()
+            Text("Hey $firstName 👋", style = MaterialTheme.typography.headlineMedium)
 
             Surface(
                 shape = CircleShape,
@@ -70,53 +78,49 @@ fun HomeScreen(navController: NavController? = null, username: String) {
             }
         }
 
-        // Today's Workout card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { navController?.navigate("workout") }
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Today's Workout", style = MaterialTheme.typography.titleMedium)
-                Text("Leg Day • 5 exercises • 45 mins", style = MaterialTheme.typography.bodyMedium)
-                Text("Tap to continue ➡️", style = MaterialTheme.typography.bodySmall)
-            }
-        }
+//        // Today's Workout card
+//        Card(
+//            modifier = Modifier.fillMaxWidth(),
+//            onClick = { navController?.navigate("workout") }
+//        ) {
+//            Column(Modifier.padding(16.dp)) {
+//                Text("Today's Workout", style = MaterialTheme.typography.titleMedium)
+//                Text("Leg Day • 5 exercises • 45 mins", style = MaterialTheme.typography.bodyMedium)
+//                Text("Tap to continue ➡️", style = MaterialTheme.typography.bodySmall)
+//            }
+//        }
 
-        // Stats row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatBox("🔥", "Streak", "4 days")
-            StatBox("📈", "Level", "Beginner")
-            StatBox("⚖️", "Calories", "1150 kcal")
-        }
+//        // Stats row
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceEvenly
+//        ) {
+//            StatBox("🔥", "Streak", "4 days")
+//            StatBox("📈", "Level", "Beginner")
+//            StatBox("⚖️", "Calories", "1150 kcal")
+//        }
 
-        // Quick links
-        Text("Quick Access", style = MaterialTheme.typography.titleMedium)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            QuickButton("Workouts") { navController?.navigate("workout") }
-            QuickButton("Exercises") { navController?.navigate("exercises") }
-            QuickButton("Messages") { navController?.navigate("messages") }
-            //QuickButton("Match") { navController?.navigate("find_match") }
-        }
+//        // Quick links
+//        Text("Quick Access", style = MaterialTheme.typography.titleMedium)
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceEvenly
+//        ) {
+//            QuickButton("Workouts") { navController?.navigate("workout") }
+//            QuickButton("Exercises") { navController?.navigate("exercises") }
+//            QuickButton("Messages") { navController?.navigate("messages") }
+//            //QuickButton("Match") { navController?.navigate("find_match") }
+//        }
 
         // Matches preview (placeholder for now)
-        Text("Suggested Matches", style = MaterialTheme.typography.titleMedium)
+        Text("Recent Chats", style = MaterialTheme.typography.titleMedium)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-//            var context = LocalContext.current
-//            val viewModel = remember { MatchingViewModel() }
-//            viewModel.fetchUserMatches(context)
-//            val matches = viewModel.matches
-
-            MatchChip("Tom")
-            MatchChip("Sara")
+            MatchChip("1"/*users[0].name*/)
+            MatchChip("2"/*users[1].name*/)
+            MatchChip("3"/*users[2].name*/)
             MatchChip("+ Find more") {
                 navController?.navigate("find_match")
             }
