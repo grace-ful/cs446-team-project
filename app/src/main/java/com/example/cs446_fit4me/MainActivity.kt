@@ -3,20 +3,85 @@ package com.example.cs446_fit4me
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.runtime.*
 import com.example.cs446_fit4me.ui.theme.CS446fit4meTheme
-import com.example.cs446_fit4me.ui.screens.MainScreen
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import android.util.Log
+import com.example.cs446_fit4me.navigation.AppEntryPoint
+import com.example.cs446_fit4me.network.ApiClient
+import com.example.cs446_fit4me.network.TestResponse
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import com.google.android.libraries.places.api.Places
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.*
+import com.example.cs446_fit4me.chat.ChatNotificationHelper
+
+@Composable
+fun NotificationPermissionRequester() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissionLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            // You can react to the result here if you want
+        }
+
+        LaunchedEffect(Unit) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+}
+
 
 class MainActivity : ComponentActivity() {
+    private var showMain by mutableStateOf(false)
+    private var currentScreen by mutableStateOf("login")
+    private var resetKey by mutableIntStateOf(0) // ← NEW
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        ChatNotificationHelper.createChannel(this)
+
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, "AIzaSyDp7yaybG_NXQ0nPFixhdGe0SMFnd7iP5M")
+        }
+
+        // TEMP TEST: Call /api/test endpoint
+        ApiClient.getTestApi(this).checkStatus().enqueue(object : Callback<TestResponse> {
+            override fun onResponse(call: Call<TestResponse>, response: Response<TestResponse>) {
+                if (response.isSuccessful) {
+                    Log.i("TestAPI", "✅ Success: ${response.body()?.status}")
+                } else {
+                    Log.e("TestAPI", "❌ Failed with code ${response.code()}")
+                }
+            }
+
+            override fun onFailure(call: Call<TestResponse>, t: Throwable) {
+                Log.e("TestAPI", "❌ Error: ${t.message}")
+            }
+        })
+
+
         setContent {
+            NotificationPermissionRequester()
             CS446fit4meTheme {
-                  MainScreen()
+                key(resetKey) {
+                    AppEntryPoint(
+                        showMain = showMain,
+                        currentScreen = currentScreen,
+                        onShowMainChanged = { showMain = it },
+                        onCurrentScreenChanged = { currentScreen = it },
+                        onResetApp = { resetKey++ }
+                    )
+                }
             }
         }
     }
 }
+
+

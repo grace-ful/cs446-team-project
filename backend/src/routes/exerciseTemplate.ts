@@ -1,25 +1,11 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
-import { MuscleGroup, BodyPart } from "../lib/types";
+import { MuscleGroup, BodyPart, AuthRequest, Equipment } from "../lib/types";
+import authMiddleware from "../middleware/authMiddleware";
 
 const exerciseTemplateRouter = Router();
 
-// GET templates by user ID
-exerciseTemplateRouter.get(
-	"/by-user/:userId",
-	async (req: Request, res: Response) => {
-		const { userId } = req.params;
-
-		try {
-			const templates = await prisma.exerciseTemplate.findMany({
-				where: { userId },
-			});
-			res.json(templates);
-		} catch (error) {
-			res.status(500).json({ error: "Failed to fetch user's exercise templates." });
-		}
-	}
-);
+// #region PUBLIC ENDPOINTS
 
 // GET general templates (isGeneral = true)
 exerciseTemplateRouter.get("/general", async (_req: Request, res: Response) => {
@@ -33,22 +19,50 @@ exerciseTemplateRouter.get("/general", async (_req: Request, res: Response) => {
 	}
 });
 
-// GET one template by ID
+// GET template by id
+exerciseTemplateRouter.get("/:id", authMiddleware, async (req: AuthRequest, res: Response): Promise<any> => {
+	const userId = req.userId;
+	const templateId = req.params.id;
+
+	try {
+		const template = await prisma.exerciseTemplate.findUnique({
+			where: { id: templateId },
+		});
+
+		if (!template) {
+			return res.status(404).json({ error: "Template not found." });
+		}
+
+		if (!template.isGeneral && template.userId !== userId) {
+			return res.status(403).json({ error: "Not authorized to view this template." });
+		}
+
+		res.json(template);
+	} catch (error) {
+		res.status(500).json({ error: "Failed to fetch template." });
+	}
+});
+
+// #endregion
+
+// #region PROTECTED ENDPOINTS
+
+// GET templates by user ID
 exerciseTemplateRouter.get(
-	"/:id",
-	async (req: Request, res: Response): Promise<any> => {
+	"/by-user/:userId",
+	authMiddleware,
+	async (req: AuthRequest, res: Response): Promise<any> => {
+		const userId = req.userId;
+		console.log(req.body);
+		console.log(`userId = ${userId}`);
+
 		try {
-			const template = await prisma.exerciseTemplate.findUnique({
-				where: { id: req.params.id },
+			const templates = await prisma.exerciseTemplate.findMany({
+				where: { userId },
 			});
-
-			if (!template) {
-				return res.status(404).json({ error: "Template not found." });
-			}
-
-			res.json(template);
+			res.json(templates);
 		} catch (error) {
-			res.status(500).json({ error: "Failed to fetch template." });
+			res.status(500).json({ error: "Failed to fetch user's exercise templates." });
 		}
 	}
 );
@@ -56,8 +70,12 @@ exerciseTemplateRouter.get(
 // Create new Exercise Template
 exerciseTemplateRouter.post(
 	"/",
-	async (req: Request, res: Response): Promise<any> => {
-		const { name, muscleGroup, bodyPart, isGeneral, imageURL, userId, equipment } = req.body;
+	authMiddleware,
+	async (req: AuthRequest, res: Response): Promise<any> => {
+		console.log(req.body);
+		const userId = req.userId;
+		const { name, muscleGroup, bodyPart, isGeneral, imageURL, equipment, description } = req.body;
+		console.log(`userId = ${userId}`);
 
 		if (!name || !muscleGroup || !bodyPart || isGeneral === undefined) {
 			return res.status(400).json({ error: "Missing required fields." });
@@ -72,6 +90,14 @@ exerciseTemplateRouter.post(
 			return res.status(400).json({ error: "Invalid bodyPart value." });
 		}
 
+		if (!Object.values(Equipment).includes(equipment)){
+				return res.status(400).json({
+					error: `Invalid equipment. Must be one of: ${Object.values(
+						Equipment
+					).join(", ")}.`,
+				});
+			}
+
 		try {
 			const newExercise = await prisma.exerciseTemplate.create({
 				data: {
@@ -82,6 +108,7 @@ exerciseTemplateRouter.post(
 					imageURL,
 					userId,
 					equipment,
+					description
 				},
 			});
 
@@ -93,19 +120,22 @@ exerciseTemplateRouter.post(
 );
 
 // UPDATE a template
-exerciseTemplateRouter.put("/:id", async (req: Request, res: Response) => {
-	const { name, muscleGroup, bodyPart, imageURL, isGeneral, equipment } = req.body;
+exerciseTemplateRouter.put("/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+	const { name, muscleGroup, bodyPart, imageURL, isGeneral, equipment, description } = req.body;
+
+	const userId = req.userId;
 
 	try {
 		const updated = await prisma.exerciseTemplate.update({
-			where: { id: req.params.id },
+			where: { id: req.params.id, userId },
 			data: {
 				name,
 				muscleGroup,
 				bodyPart,
 				imageURL,
 				isGeneral,
-				equipment
+				equipment,
+				description
 			},
 		});
 
@@ -116,10 +146,11 @@ exerciseTemplateRouter.put("/:id", async (req: Request, res: Response) => {
 });
 
 // DELETE a template
-exerciseTemplateRouter.delete("/:id", async (req: Request, res: Response) => {
+exerciseTemplateRouter.delete("/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+	const userId = req.userId;
 	try {
 		await prisma.exerciseTemplate.delete({
-			where: { id: req.params.id },
+			where: { id: req.params.id, userId },
 		});
 
 		res.status(204).send();
@@ -127,5 +158,7 @@ exerciseTemplateRouter.delete("/:id", async (req: Request, res: Response) => {
 		res.status(400).json({ error: "Failed to delete template." });
 	}
 });
+
+// #endregion
 
 export default exerciseTemplateRouter;

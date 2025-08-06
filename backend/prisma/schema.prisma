@@ -89,6 +89,22 @@ enum BodyPart {
   OTHER
 }
 
+enum matchStrategy {
+  BALANCED
+  SCHEDULE
+  EXPERIENCE
+  LOCAL
+  BODY
+  BEGINNER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  OTHER
+}
+
 model User {
   id              String          @id @default(uuid())
   email           String          @unique
@@ -102,12 +118,21 @@ model User {
   createdAt       DateTime        @default(now())
   experienceLevel ExperienceLevel @default(BEGINNER)
   gymFrequency    GymFrequency    @default(NEVER)
+  matchStrategy matchStrategy @default(BALANCED)
+  gender Gender @default(MALE)
+  profilePrivacy Boolean @default(false)
+  matchWithSameGender Boolean @default(false)
+
 
   customWorkoutTemplates  WorkoutTemplate[]
   customExerciseTemplates ExerciseTemplate[]
   workoutSessions         WorkoutSession[]
   exerciseSessions        ExerciseSession[]
   PR                      PR[]
+  matchesInitiated MatchEntry[] @relation("MatchesInitiated")
+  matchesReceived  MatchEntry[] @relation("MatchesReceived")
+  SentMessages Message[] @relation("SentMessages")
+  ReceivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model WorkoutTemplate {
@@ -117,7 +142,7 @@ model WorkoutTemplate {
   createdAt DateTime @default(now())
 
   exercises      ExerciseTemplate[] @relation("WorkoutTemplateExercises")
-  User           User?              @relation(fields: [userId], references: [id])
+  User           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String?
   WorkoutSession WorkoutSession[]
 }
@@ -125,14 +150,16 @@ model WorkoutTemplate {
 model WorkoutSession {
   id String @id @default(uuid())
 
-  User   User   @relation(fields: [userId], references: [id])
+  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
 
-  Workout           WorkoutTemplate @relation(fields: [workoutTemplateId], references: [id])
+  Workout           WorkoutTemplate @relation(fields: [workoutTemplateId], references: [id], onDelete: Cascade)
+
   workoutTemplateId String
 
   workoutDate DateTime @default(now())
   notes       String?
+  duration Int @default(0)
 
   exerciseSessions ExerciseSession[]
 
@@ -142,9 +169,9 @@ model WorkoutSession {
 model PR {
   id String @id @default(uuid())
 
-  template   ExerciseTemplate @relation(fields: [templateId], references: [id])
+  template   ExerciseTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId String
-  User       User             @relation(fields: [userId], references: [id])
+  User       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
 
   weight    Float? // Optional: for weight-based PRs
@@ -161,9 +188,10 @@ model ExerciseTemplate {
   equipment   Equipment
   isGeneral   Boolean     @default(false)
   imageURL      String?
+  description String?
 
   createdAt        DateTime          @default(now())
-  User             User?             @relation(fields: [userId], references: [id])
+  User             User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           String?
   WorkoutTemplates WorkoutTemplate[] @relation("WorkoutTemplateExercises")
   PR               PR[]
@@ -172,19 +200,19 @@ model ExerciseTemplate {
 
 model ExerciseSession {
   id                 String           @id @default(uuid())
-  exerciseTemplate   ExerciseTemplate @relation(fields: [exerciseTemplateID], references: [id])
+  exerciseTemplate   ExerciseTemplate @relation(fields: [exerciseTemplateID], references: [id], onDelete: Cascade)
   exerciseTemplateID String
 
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
 
-  date  DateTime
+  date  DateTime @default(now())
   notes String?
 
   sets ExerciseSet[]
 
   createdAt        DateTime        @default(now())
-  WorkoutSession   WorkoutSession? @relation(fields: [workoutSessionId], references: [id])
+  WorkoutSession   WorkoutSession? @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
   workoutSessionId String?
 }
 
@@ -196,6 +224,28 @@ model ExerciseSet {
   duration Int? // In seconds, optional
 
   createdAt         DateTime        @default(now())
-  ExerciseSession   ExerciseSession @relation(fields: [exerciseSessionId], references: [id])
+  ExerciseSession   ExerciseSession @relation(fields: [exerciseSessionId], references: [id], onDelete: Cascade)
   exerciseSessionId String
+}
+
+model MatchEntry {
+  id String @id @default(uuid())
+  userId String
+  matchedUserId String
+  score Float
+  createdAt DateTime @default(now())
+
+  matcher     User @relation("MatchesInitiated", fields: [userId], references: [id], onDelete: Cascade)
+  matchee     User @relation("MatchesReceived", fields: [matchedUserId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id String @id @default(uuid())
+  senderId String
+  receiverId String
+  content String
+  createdAt DateTime @default(now())
+
+  sender     User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 }

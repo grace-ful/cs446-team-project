@@ -1,129 +1,400 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
-import { TimePreference, ExperienceLevel, GymFrequency } from "../lib/types";
+import {
+  TimePreference,
+  ExperienceLevel,
+  GymFrequency,
+  AuthRequest,
+  Equipment,
+  Gender,
+} from "../lib/types";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import authMiddleware from "../middleware/authMiddleware";
+import { isEnumValue } from "../utils/isEnumValue";
 
 const userRouter = Router();
 
+const SALT_ROUNDS = 10;
+
+function generateToken(userId: string) {
+  return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+}
+
+// #region PUBLIC ENDPOINTS
+
+userRouter.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    msg: "Hi from user router",
+  });
+});
+
 // Create new user
-userRouter.post("/", async (req: Request, res: Response): Promise<any> => {
-	const {
-		email,
-		name,
-		passwordHash,
-		heightCm,
-		weightKg,
-		age,
-		location,
-		timePreference,
-		experienceLevel,
-		gymFrequency,
-	} = req.body;
+userRouter.post(
+  "/signup",
+  async (req: Request, res: Response): Promise<any> => {
+    const {
+      email,
+      name,
+      password,
+      heightCm,
+      weightKg,
+      age,
+      location,
+      timePreference,
+      experienceLevel,
+      gymFrequency,
+      gender,
+    } = req.body;
 
-	// Validate enums
-	if (!Object.values(TimePreference).includes(timePreference)) {
-		return res.status(400).json({
-			error: `Invalid timePreference. Must be one of: ${Object.values(
-				TimePreference
-			).join(", ")}.`,
-		});
-	}
+    // Validate enums (these are all strings coming in from the request body)
+    if (!isEnumValue(TimePreference, timePreference)) {
+      return res.status(400).json({
+        error: `Invalid timePreference. Must be one of: ${Object.values(
+          TimePreference
+        ).join(", ")}`,
+      });
+    }
 
-	if (!Object.values(ExperienceLevel).includes(experienceLevel)) {
-		return res.status(400).json({
-			error: `Invalid experienceLevel. Must be one of: ${Object.values(
-				ExperienceLevel
-			).join(", ")}.`,
-		});
-	}
+    if (!isEnumValue(ExperienceLevel, experienceLevel)) {
+      return res.status(400).json({
+        error: `Invalid experienceLevel. Must be one of: ${Object.values(
+          ExperienceLevel
+        ).join(", ")}`,
+      });
+    }
 
-	if (!Object.values(GymFrequency).includes(gymFrequency)) {
-		return res.status(400).json({
-			error: `Invalid gymFrequency. Must be one of: ${Object.values(
-				GymFrequency
-			).join(", ")}.`,
-		});
-	}
+    if (!isEnumValue(GymFrequency, gymFrequency)) {
+      return res.status(400).json({
+        error: `Invalid gymFrequency. Must be one of: ${Object.values(
+          GymFrequency
+        ).join(", ")}`,
+      });
+    }
 
-	try {
-		const newUser = await prisma.user.create({
-			data: {
-				email,
-				name,
-				passwordHash,
-				heightCm,
-				weightKg,
-				age,
-				location,
-				timePreference: timePreference as TimePreference,
-				experienceLevel: experienceLevel as ExperienceLevel,
-				gymFrequency: gymFrequency as GymFrequency,
-			},
-		});
+    if (!isEnumValue(Gender, gender)) {
+      return res.status(400).json({
+        error: `Invalid gender. Must be one of: ${Object.values(Gender).join(
+          ", "
+        )}`,
+      });
+    }
 
-		res.status(201).json(newUser);
-	} catch (err: any) {
-		res.status(400).json({ error: err.message });
-	}
+    try {
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already in use." });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          name,
+          passwordHash: hashedPassword,
+          heightCm,
+          weightKg,
+          age,
+          location,
+          timePreference, // string like "MORNING"
+          experienceLevel, // string like "BEGINNER"
+          gymFrequency, // string like "REGULARLY"
+          gender, // string like "MALE"
+        },
+      });
+
+      const token = generateToken(newUser.id);
+      const { passwordHash: _, ...userWithoutPassword } = newUser;
+
+      res.status(201).json({
+        user: userWithoutPassword,
+        id: newUser.id,
+        token: `Bearer ${token}`,
+      });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+userRouter.post("/login", async (req: Request, res: Response): Promise<any> => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    const token = generateToken(user.id);
+
+    const { passwordHash, ...userWithoutPassword } = user;
+    res.status(200).json({
+      id: user.id,
+      user: userWithoutPassword,
+      token: `Bearer ${token}`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-userRouter.get("/", async (req: Request, res: Response) => {
-	try {
-		const users = await prisma.user.findMany();
-		res.status(200).json(users);
-	} catch (err: any) {
-		res.status(500).json({ error: err.message });
-	}
-});
+// #endregion
+
+// #region PROTECTED ENDPOINTS
+
+userRouter.get(
+  "/users",
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.userId;
+    try {
+      const users = await prisma.user.findMany();
+      res.status(200).json(users);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 // Get user by ID
-userRouter.get("/:id", async (req: Request, res: Response): Promise<any> => {
-	const userId = req.params.id;
+userRouter.get(
+  "/:id",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const userId = req.userId;
 
-	try {
-		const user = await prisma.user.findUnique({
-			where: { id: userId },
-		});
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
 
-		if (!user) {
-			return res.status(404).json({ error: "User not found." });
-		}
+      if (!user) {
+        return res.status(404).json({ error: "User not found." });
+      }
 
-		res.json(user);
-	} catch (err: any) {
-		res.status(500).json({ error: err.message });
-	}
-});
+      res.json(user);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+userRouter.get(
+  "/by-id/:id",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const userId = req.params.id;
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found." });
+      }
+
+      res.json(user);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+userRouter.put(
+  "/update-match-strategy",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const { matchStrategy } = req.body;
+    const userId = req.userId;
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { matchStrategy },
+      });
+
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("❌ Update error:", err);
+      res.status(400).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
+userRouter.put(
+  "/update-privacy",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const { profilePrivacy } = req.body;
+    const userId = req.userId;
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { profilePrivacy },
+      });
+
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("❌ Update error:", err);
+      res.status(400).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
+userRouter.put(
+  "/update-gender-matching-preference",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const { matchWithSameGender } = req.body;
+    const userId = req.userId;
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { matchWithSameGender },
+      });
+
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("❌ Update error:", err);
+      res.status(400).json({
+        error: err.message,
+      });
+    }
+  }
+);
 
 // Update user
-userRouter.put("/:id", async (req: Request, res: Response) => {
-	const userId = req.params.id;
-	const updateData = req.body;
+userRouter.put(
+  "/:id",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const userId = req.userId;
 
-	try {
-		const updatedUser = await prisma.user.update({
-			where: { id: userId },
-			data: updateData,
-		});
+    if (req.params.id !== userId) {
+      return res
+        .status(403)
+        .json({ error: "You can only modify your own account." });
+    }
 
-		res.json(updatedUser);
-	} catch (err: any) {
-		res.status(400).json({ error: err.message });
-	}
-});
+    const {
+      name,
+      age,
+      heightCm,
+      weightKg,
+      location,
+      timePreference,
+      experienceLevel,
+      gymFrequency,
+      password,
+      gender,
+    } = req.body;
+
+    const updateData: any = {};
+
+    if (name != null) updateData.name = name;
+    if (age != null) updateData.age = age;
+    if (heightCm != null) updateData.heightCm = heightCm;
+    if (weightKg != null) updateData.weightKg = weightKg;
+    if (location != null) updateData.location = location;
+
+    if (timePreference != null) {
+      if (!isEnumValue(TimePreference, timePreference)) {
+        return res.status(400).json({ error: "Invalid timePreference" });
+      }
+      updateData.timePreference = timePreference;
+    }
+
+    if (experienceLevel != null) {
+      if (!isEnumValue(ExperienceLevel, experienceLevel)) {
+        return res.status(400).json({ error: "Invalid experienceLevel" });
+      }
+      updateData.experienceLevel = experienceLevel;
+    }
+
+    if (gymFrequency != null) {
+      if (!isEnumValue(GymFrequency, gymFrequency)) {
+        return res.status(400).json({ error: "Invalid gymFrequency" });
+      }
+      updateData.gymFrequency = gymFrequency;
+    }
+
+    if (gender != null) {
+      if (!isEnumValue(Gender, gender)) {
+        return res.status(400).json({ error: "Invalid gender" });
+      }
+      updateData.gender = gender;
+    }
+
+    if (password != null) {
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      updateData.passwordHash = hashedPassword;
+    }
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+      });
+
+      const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+
+      res.json(userWithoutPassword);
+    } catch (err: any) {
+      console.error("❌ Update error:", err);
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
 
 // Delete user
-userRouter.delete("/:id", async (req: Request, res: Response) => {
-	const userId = req.params.id;
+userRouter.delete(
+  "/:id",
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.userId;
 
-	try {
-		await prisma.user.delete({
-			where: { id: userId },
-		});
+    if (req.params.id !== userId) {
+      res.status(403).json({ error: "You can only modify your own account." });
+      return;
+    }
 
-		res.status(204).send(); // success with no content
-	} catch (err: any) {
-		res.status(400).json({ error: err.message });
-	}
-});
+    try {
+      await prisma.user.delete({
+        where: { id: userId },
+      });
+
+      res.status(204).send(); // success with no content
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+// #endregion
 
 export default userRouter;

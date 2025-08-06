@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "833025302662",
+    "project_id": "cs446fit4me-f5befb1f",
+    "storage_bucket": "cs446fit4me-f5befb1f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:833025302662:android:a24ce52ddeb190f48bf107",
+        "android_client_info": {
+          "package_name": "com.example.cs446_fit4me"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU0V2xK7sL8PDG8ti8z7aqFrwBUSzaiZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -21,23 +21,7 @@ async function main() {
   const filePath = path.resolve(__dirname, "../../dist/scripts/output.json");
   const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
-  await prisma.pR.deleteMany({
-    where: {
-      template: {
-        isGeneral: true,
-      },
-    },
-  });
-
-  await prisma.exerciseSession.deleteMany({
-  where: {
-    exerciseTemplate: {
-      isGeneral: true,
-    },
-  },
-});
-
-  // Step 1: Clear existing general templates
+  // Clear existing general templates
   await prisma.exerciseTemplate.deleteMany({
     where: { isGeneral: true },
   });
@@ -69,6 +53,7 @@ async function main() {
           imageURL: item.imageURL ?? null,
           isGeneral: item.isGeneric ?? true,
           userId: null,
+          description: item.description ?? null,
         },
       });
     } catch (error: any) {

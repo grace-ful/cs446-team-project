@@ -9,5 +9,5 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Added for splash screen -->
-    <color name="splash_background">#b5871d</color> <!-- Medium Blue -->
+    <color name="splash_background">#a09edf</color> <!-- Light Purple -->
 </resources>
