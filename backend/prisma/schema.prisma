@@ -122,7 +122,8 @@ model User {
   gender Gender @default(MALE)
   profilePrivacy Boolean @default(false)
   matchWithSameGender Boolean @default(false)
-
+  favoriteExercises FavoriteExercise[]
+  favoriteWorkouts FavoriteWorkout[]
 
   customWorkoutTemplates  WorkoutTemplate[]
   customExerciseTemplates ExerciseTemplate[]
@@ -140,6 +141,7 @@ model WorkoutTemplate {
   name      String
   isGeneral Boolean  @default(false) // true = general, false = custom
   createdAt DateTime @default(now())
+  favoritedBy FavoriteWorkout[]
 
   exercises      ExerciseTemplate[] @relation("WorkoutTemplateExercises")
   User           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -189,6 +191,7 @@ model ExerciseTemplate {
   isGeneral   Boolean     @default(false)
   imageURL      String?
   description String?
+  favoritedBy FavoriteExercise[]
 
   createdAt        DateTime          @default(now())
   User             User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -248,4 +251,28 @@ model Message {
 
   sender     User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver   User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model FavoriteExercise {
+  userId             String
+  exerciseTemplateID String
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseTemplate   ExerciseTemplate @relation(fields: [exerciseTemplateID], references: [id], onDelete: Cascade)
+  createdAt          DateTime         @default(now())
+
+  @@id([userId, exerciseTemplateID])
+  @@index([userId, createdAt])        // fast “my favorites” lists
+  @@index([exerciseTemplateID])       // optional: counts per exercise
+}
+
+model FavoriteWorkout {
+  userId            String
+  workoutTemplateID String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutTemplate   WorkoutTemplate @relation(fields: [workoutTemplateID], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+
+  @@id([userId, workoutTemplateID])
+  @@index([userId, createdAt])       // fast “my favorites” lists
+  @@index([workoutTemplateID])       // optional: counts per workout
 }
